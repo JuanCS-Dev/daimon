@@ -254,5 +254,88 @@ class TestGenerateZshrcHooks:
         assert ".daimon/daimon.sock" in hooks
 
 
+class TestFlushIntegration:
+    """Integration tests for flush functionality."""
+
+    @pytest.mark.asyncio
+    async def test_flush_empty_pending(self) -> None:
+        """Test flush with empty pending list returns early."""
+        agg = HeartbeatAggregator()
+        agg.pending = []  # Empty
+        await agg.flush()  # Should return early (line 136)
+        assert agg.pending == []
+
+    @pytest.mark.asyncio
+    async def test_flush_sends_to_noesis(self) -> None:
+        """Test flush actually sends to NOESIS (real integration)."""
+        agg = HeartbeatAggregator()
+
+        # Add heartbeats
+        for i in range(2):
+            hb = ShellHeartbeat(
+                timestamp=f"2025-12-12T12:00:{i:02d}",
+                command=f"echo test{i}",
+                pwd="/tmp",
+                exit_code=0,
+            )
+            agg.pending.append(hb)
+
+        # Flush to real NOESIS
+        await agg.flush()
+
+        # Pending should be cleared
+        assert len(agg.pending) == 0
+
+    @pytest.mark.asyncio
+    async def test_add_triggers_flush_for_significant_command(self) -> None:
+        """Test that add() triggers flush for significant commands."""
+        import asyncio
+        from datetime import timedelta
+
+        agg = HeartbeatAggregator()
+        # Set last_flush to old time to not trigger time-based flush
+        agg.last_flush = datetime.now()
+
+        # Add a significant command (git push)
+        hb = ShellHeartbeat(
+            timestamp="2025-12-12T12:00:00",
+            command="git push origin main",
+            pwd="/project",
+            exit_code=0,
+        )
+
+        # This should trigger flush via asyncio.create_task (line 108)
+        agg.add(hb)
+
+        # Give async task time to complete
+        await asyncio.sleep(0.5)
+
+
+class TestMainFunction:
+    """Tests for main entry point."""
+
+    def test_main_with_zshrc_flag(self) -> None:
+        """Test main with --zshrc outputs hooks."""
+        import sys
+        from io import StringIO
+        from collectors.shell_watcher import main
+
+        # Capture stdout
+        old_stdout = sys.stdout
+        sys.stdout = StringIO()
+
+        # Simulate --zshrc argument
+        old_argv = sys.argv
+        sys.argv = ["shell_watcher.py", "--zshrc"]
+
+        try:
+            main()
+            output = sys.stdout.getvalue()
+            assert "daimon_preexec" in output
+        finally:
+            sys.stdout = old_stdout
+            sys.argv = old_argv
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

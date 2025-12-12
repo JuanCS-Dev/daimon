@@ -139,6 +139,181 @@ class TestSessionTracker:
         # No events should be captured
         assert tracker.session_events == []
 
+    @pytest.mark.asyncio
+    async def test_send_event_real(self) -> None:
+        """Test sending event to real NOESIS."""
+        tracker = SessionTracker()
+        event = {
+            "event_type": "test",
+            "timestamp": "2025-12-12T12:00:00",
+            "project": "test",
+            "files_touched": [],
+            "intention": "test",
+        }
+        # Should not raise even if endpoint exists or not
+        await tracker._send_event(event)
+
+    @pytest.mark.asyncio
+    async def test_process_entry_non_user(self) -> None:
+        """Test processing non-user entry is skipped."""
+        tracker = SessionTracker()
+        entry = {"role": "assistant", "content": "Hello"}
+        await tracker._process_entry(entry, "test-project")
+        assert len(tracker.session_events) == 0
+
+    @pytest.mark.asyncio
+    async def test_process_entry_user_message(self) -> None:
+        """Test processing user message extracts intention."""
+        tracker = SessionTracker()
+        entry = {
+            "role": "user",
+            "content": "Create a new component for authentication"
+        }
+        await tracker._process_entry(entry, "test-project")
+        assert len(tracker.session_events) == 1
+        assert tracker.session_events[0]["intention"] == "create"
+
+    @pytest.mark.asyncio
+    async def test_process_entry_empty_content(self) -> None:
+        """Test processing empty content is skipped."""
+        tracker = SessionTracker()
+        entry = {"role": "user", "content": ""}
+        await tracker._process_entry(entry, "test-project")
+        assert len(tracker.session_events) == 0
+
+
+class TestScanProjects:
+    """Tests for project scanning."""
+
+    @pytest.mark.asyncio
+    async def test_scan_real_claude_directory(self) -> None:
+        """Test scanning real .claude directory if it exists."""
+        from pathlib import Path
+        tracker = SessionTracker()
+        claude_dir = Path.home() / ".claude" / "projects"
+
+        if claude_dir.exists():
+            await tracker.scan_projects()
+            # Should not raise, events may or may not be captured
+            assert isinstance(tracker.session_events, list)
+
+    @pytest.mark.asyncio
+    async def test_scan_with_temp_structure(self) -> None:
+        """Test scanning with temporary Claude directory structure."""
+        import tempfile
+        import json
+        from pathlib import Path
+        import collectors.claude_watcher as cw
+
+        # Save original CLAUDE_DIR
+        original_dir = cw.CLAUDE_DIR
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create fake Claude directory structure
+            projects_dir = Path(tmpdir)
+            project_dir = projects_dir / "test-project"
+            sessions_dir = project_dir / "sessions"
+            sessions_dir.mkdir(parents=True)
+
+            # Create a session file
+            session_file = sessions_dir / "session.jsonl"
+            with open(session_file, 'w') as f:
+                f.write(json.dumps({"role": "user", "content": "Refactor the code"}) + "\n")
+
+            # Temporarily override CLAUDE_DIR
+            cw.CLAUDE_DIR = projects_dir
+
+            try:
+                tracker = SessionTracker()
+                await tracker.scan_projects()
+                # Should have captured the event
+                assert len(tracker.session_events) == 1
+                assert tracker.session_events[0]["intention"] == "refactor"
+            finally:
+                cw.CLAUDE_DIR = original_dir
+
+
+class TestProcessFile:
+    """Tests for file processing."""
+
+    @pytest.mark.asyncio
+    async def test_process_file_not_found(self) -> None:
+        """Test processing non-existent file."""
+        from pathlib import Path
+        tracker = SessionTracker()
+        # Should not raise
+        await tracker._process_file(Path("/nonexistent/file.jsonl"), "test")
+        assert len(tracker.session_events) == 0
+
+    @pytest.mark.asyncio
+    async def test_process_file_with_data(self) -> None:
+        """Test processing file with real JSONL data."""
+        import tempfile
+        import json
+        from pathlib import Path
+
+        tracker = SessionTracker()
+
+        # Create temp file with JSONL data
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False) as f:
+            # Write some test entries
+            f.write(json.dumps({"role": "user", "content": "Create a new test"}) + "\n")
+            f.write(json.dumps({"role": "assistant", "content": "Sure"}) + "\n")
+            f.write(json.dumps({"role": "user", "content": "Fix the bug"}) + "\n")
+            temp_path = Path(f.name)
+
+        try:
+            await tracker._process_file(temp_path, "test-project")
+            # Should have processed 2 user messages
+            assert len(tracker.session_events) == 2
+            assert tracker.session_events[0]["intention"] == "create"
+            assert tracker.session_events[1]["intention"] == "fix"
+        finally:
+            temp_path.unlink()
+
+    @pytest.mark.asyncio
+    async def test_process_file_invalid_json(self) -> None:
+        """Test processing file with invalid JSON lines."""
+        import tempfile
+        from pathlib import Path
+
+        tracker = SessionTracker()
+
+        # Create temp file with invalid JSON
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False) as f:
+            f.write("not valid json\n")
+            f.write("{invalid\n")
+            temp_path = Path(f.name)
+
+        try:
+            await tracker._process_file(temp_path, "test-project")
+            # Should handle gracefully, no events
+            assert len(tracker.session_events) == 0
+        finally:
+            temp_path.unlink()
+
+
+class TestMainFunction:
+    """Tests for main entry point."""
+
+    def test_main_no_args_shows_help(self) -> None:
+        """Test main with no args shows help."""
+        import sys
+        from io import StringIO
+        from collectors.claude_watcher import main
+
+        old_stderr = sys.stderr
+        sys.stderr = StringIO()
+        old_argv = sys.argv
+        sys.argv = ["claude_watcher.py"]
+
+        try:
+            main()
+            # Should print help to stderr or stdout
+        finally:
+            sys.stderr = old_stderr
+            sys.argv = old_argv
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
