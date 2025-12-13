@@ -128,9 +128,10 @@ class HeartbeatAggregator:
 
     async def flush(self) -> None:
         """
-        Flush pending heartbeats to NOESIS.
+        Flush pending heartbeats to NOESIS and local ActivityStore.
 
         Detects patterns and sends batch to /api/daimon/shell/batch.
+        Also stores locally for StyleLearner integration.
         """
         if not self.pending:
             return
@@ -141,6 +142,10 @@ class HeartbeatAggregator:
 
         patterns = self._detect_patterns(batch)
 
+        # Store locally in ActivityStore for StyleLearner
+        self._store_locally(batch)
+
+        # Send to NOESIS
         try:
             import httpx  # pylint: disable=import-outside-toplevel
 
@@ -157,6 +162,62 @@ class HeartbeatAggregator:
             logger.warning("httpx not available, heartbeats not sent")
         except Exception as exc:  # pylint: disable=broad-except
             logger.warning("Failed to flush heartbeats: %s", exc)
+
+    def _store_locally(self, batch: List[ShellHeartbeat]) -> None:
+        """
+        Store heartbeats in local ActivityStore and feed StyleLearner.
+
+        Args:
+            batch: List of heartbeats to store.
+        """
+        try:
+            from memory.activity_store import get_activity_store  # pylint: disable=import-outside-toplevel
+
+            store = get_activity_store()
+            for hb in batch:
+                try:
+                    ts = datetime.fromisoformat(hb.timestamp)
+                except ValueError:
+                    ts = datetime.now()
+
+                data = {
+                    "command": hb.command,
+                    "pwd": hb.pwd,
+                    "exit_code": hb.exit_code,
+                    "duration": hb.duration,
+                    "git_branch": hb.git_branch,
+                }
+
+                store.add(
+                    watcher_type="shell",
+                    timestamp=ts,
+                    data=data,
+                )
+
+                # Also feed StyleLearner for work intensity analysis
+                self._feed_style_learner(data)
+
+            logger.debug("Stored %d heartbeats locally", len(batch))
+        except ImportError:
+            logger.debug("ActivityStore not available, skipping local storage")
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.warning("Failed to store locally: %s", exc)
+
+    def _feed_style_learner(self, data: Dict[str, Any]) -> None:
+        """
+        Feed shell data to StyleLearner for work intensity analysis.
+
+        Args:
+            data: Shell command data dict.
+        """
+        try:
+            from learners import get_style_learner  # pylint: disable=import-outside-toplevel
+            learner = get_style_learner()
+            learner.add_shell_sample(data)
+        except ImportError:
+            pass  # StyleLearner not available
+        except Exception:  # pylint: disable=broad-except
+            pass  # Don't fail if StyleLearner has issues
 
     def _detect_patterns(self, batch: List[ShellHeartbeat]) -> Dict[str, Any]:
         """

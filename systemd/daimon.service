@@ -1,0 +1,23 @@
+[Unit]
+Description=DAIMON - Personal Exocortex Daemon
+Documentation=https://github.com/user/daimon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /media/juan/DATA/projetos/daimon/daimon_daemon.py
+ExecStop=/usr/bin/python3 /media/juan/DATA/projetos/daimon/daimon_daemon.py --stop
+WorkingDirectory=/media/juan/DATA/projetos/daimon
+Restart=on-failure
+RestartSec=5
+
+# Environment
+Environment=PYTHONPATH=/media/juan/DATA/projetos/daimon
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=daimon
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,855 @@
+/*
+ * SOPHIA - DAIMON Dashboard Aesthetic
+ * ====================================
+ * Dual-mode design: Sophia (contemplative) & Athena (analytical)
+ *
+ * Inspired by:
+ * - Greek classical aesthetics
+ * - Museum/gallery contemplative spaces
+ * - Sacred geometry (Golden Ratio φ = 1.618)
+ * - Art Nouveau organic curves
+ */
+
+/* ========================================
+   FONTS
+   ======================================== */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ========================================
+   CSS VARIABLES
+   ======================================== */
+:root {
+  /* Golden Ratio */
+  --phi: 1.618;
+
+  /* Marble & Stone Palette */
+  --marble-white: #F8F6F0;
+  --stone-warm: #E8E4DC;
+  --stone-mid: #D4CFC4;
+  --shadow-soft: #B8B2A6;
+
+  /* Mediterranean Earth */
+  --terracotta: #C4785A;
+  --olive-gold: #9B8C5A;
+  --aegean-blue: #4A6B7C;
+  --wine-dark: #5C3D4E;
+
+  /* Accents */
+  --gold-leaf: #C9A227;
+  --gold-soft: rgba(201, 162, 39, 0.15);
+  --bronze-patina: #6B8E6B;
+
+  /* Text */
+  --ink-black: #2C2416;
+  --papyrus-text: #4A4236;
+  --text-muted: #7A7368;
+
+  /* Athena Mode (Data Dense) */
+  --athena-bg: #1a1a1f;
+  --athena-surface: #252529;
+  --athena-border: #3a3a42;
+  --athena-text: #e8e6e3;
+  --athena-muted: #8a8880;
+  --athena-accent: #C9A227;
+
+  /* Spacing based on φ */
+  --space-xs: 0.382rem;
+  --space-sm: 0.618rem;
+  --space-md: 1rem;
+  --space-lg: 1.618rem;
+  --space-xl: 2.618rem;
+  --space-2xl: 4.236rem;
+
+  /* Transitions */
+  --transition-smooth: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-breathe: 3s ease-in-out infinite;
+}
+
+/* ========================================
+   BASE STYLES
+   ======================================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.618;
+  min-height: 100vh;
+  transition: background-color var(--transition-smooth), color var(--transition-smooth);
+}
+
+/* ========================================
+   SOPHIA MODE (Contemplative)
+   ======================================== */
+body.sophia-mode {
+  background: var(--marble-white);
+  color: var(--ink-black);
+}
+
+.sophia-mode .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-xl);
+}
+
+/* Grainy texture overlay */
+.sophia-mode::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  z-index: 1000;
+}
+
+/* ========================================
+   ATHENA MODE (Analytical)
+   ======================================== */
+body.athena-mode {
+  background: var(--athena-bg);
+  color: var(--athena-text);
+}
+
+.athena-mode .container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: var(--space-md);
+}
+
+/* ========================================
+   TYPOGRAPHY
+   ======================================== */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.sophia-mode h1 { font-size: 2.618rem; }
+.sophia-mode h2 { font-size: 1.618rem; }
+.sophia-mode h3 { font-size: 1.272rem; }
+
+.athena-mode h1 { font-size: 1.5rem; }
+.athena-mode h2 { font-size: 1.125rem; }
+.athena-mode h3 { font-size: 1rem; }
+
+/* Greek letters styling */
+.greek {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  letter-spacing: 0.1em;
+}
+
+/* Monospace for data */
+.mono, code, pre {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.875rem;
+}
+
+/* ========================================
+   HEADER
+   ======================================== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-lg) 0;
+  border-bottom: 1px solid;
+  margin-bottom: var(--space-xl);
+}
+
+.sophia-mode .header {
+  border-color: var(--stone-mid);
+}
+
+.athena-mode .header {
+  border-color: var(--athena-border);
+  padding: var(--space-md) 0;
+  margin-bottom: var(--space-lg);
+}
+
+.logo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.logo-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.618rem;
+  letter-spacing: 0.15em;
+}
+
+.sophia-mode .logo-title {
+  color: var(--ink-black);
+}
+
+.athena-mode .logo-title {
+  color: var(--gold-leaf);
+  font-size: 1.25rem;
+}
+
+.logo-subtitle {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.sophia-mode .logo-subtitle {
+  color: var(--text-muted);
+}
+
+.athena-mode .logo-subtitle {
+  color: var(--athena-muted);
+}
+
+/* Mode switcher */
+.mode-switcher {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-xs);
+  border-radius: 2rem;
+}
+
+.sophia-mode .mode-switcher {
+  background: var(--stone-warm);
+}
+
+.athena-mode .mode-switcher {
+  background: var(--athena-surface);
+}
+
+.mode-btn {
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  border-radius: 1.5rem;
+  font-family: 'Playfair Display', serif;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all var(--transition-smooth);
+  background: transparent;
+}
+
+.sophia-mode .mode-btn {
+  color: var(--text-muted);
+}
+
+.athena-mode .mode-btn {
+  color: var(--athena-muted);
+}
+
+.mode-btn.active {
+  background: var(--gold-leaf);
+  color: white;
+}
+
+.mode-btn:hover:not(.active) {
+  background: var(--gold-soft);
+}
+
+/* ========================================
+   SOPHIA: ORACLE SECTION
+   ======================================== */
+.oracle-section {
+  text-align: center;
+  padding: var(--space-2xl) 0;
+  min-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.oracle-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 4rem;
+  letter-spacing: 0.3em;
+  margin-bottom: var(--space-lg);
+  color: var(--ink-black);
+}
+
+.oracle-quote {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 1.272rem;
+  color: var(--text-muted);
+  margin-bottom: var(--space-xl);
+  max-width: 30rem;
+}
+
+/* Breathing pulse */
+.oracle-pulse {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--gold-leaf) 0%, transparent 70%);
+  animation: breathe var(--transition-breathe);
+  margin: var(--space-xl) 0;
+  position: relative;
+}
+
+.oracle-pulse::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--gold-leaf);
+}
+
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+.oracle-status {
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+}
+
+.oracle-status.online {
+  color: var(--bronze-patina);
+}
+
+.oracle-status.offline {
+  color: var(--terracotta);
+}
+
+/* ========================================
+   SOPHIA: INSIGHT CARDS
+   ======================================== */
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-lg);
+  margin-top: var(--space-xl);
+}
+
+.insight-card {
+  background: var(--stone-warm);
+  border-radius: var(--space-sm);
+  padding: var(--space-lg);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-smooth);
+  animation: emerge 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.insight-card:hover {
+  box-shadow: 0 0 30px var(--gold-soft);
+  transform: translateY(-2px);
+}
+
+@keyframes emerge {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.insight-card:nth-child(1) { animation-delay: 0.1s; }
+.insight-card:nth-child(2) { animation-delay: 0.2s; }
+.insight-card:nth-child(3) { animation-delay: 0.3s; }
+.insight-card:nth-child(4) { animation-delay: 0.4s; }
+
+.insight-icon {
+  font-size: 1.5rem;
+  margin-bottom: var(--space-sm);
+}
+
+.insight-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.125rem;
+  margin-bottom: var(--space-sm);
+  color: var(--ink-black);
+}
+
+.insight-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  color: var(--gold-leaf);
+  margin-bottom: var(--space-xs);
+}
+
+.insight-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+}
+
+/* ========================================
+   SOPHIA: WISDOM STREAM
+   ======================================== */
+.wisdom-stream {
+  margin-top: var(--space-2xl);
+  padding: var(--space-xl);
+  background: linear-gradient(180deg, transparent 0%, var(--stone-warm) 100%);
+  border-radius: var(--space-sm);
+}
+
+.wisdom-item {
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--stone-mid);
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+}
+
+.wisdom-item:last-child {
+  border-bottom: none;
+}
+
+.wisdom-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.wisdom-text {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  color: var(--papyrus-text);
+}
+
+.wisdom-category {
+  display: inline-block;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--gold-soft);
+  border-radius: var(--space-xs);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--olive-gold);
+  margin-left: var(--space-sm);
+}
+
+/* ========================================
+   ATHENA: DATA TABLES
+   ======================================== */
+.athena-mode .data-section {
+  background: var(--athena-surface);
+  border: 1px solid var(--athena-border);
+  border-radius: var(--space-xs);
+  margin-bottom: var(--space-md);
+  overflow: hidden;
+}
+
+.athena-mode .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(201, 162, 39, 0.05);
+  border-bottom: 1px solid var(--athena-border);
+}
+
+.athena-mode .section-title {
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--gold-leaf);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.athena-mode .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.athena-mode .data-table th {
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--athena-bg);
+  font-weight: 500;
+  color: var(--athena-muted);
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--athena-border);
+}
+
+.athena-mode .data-table td {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--athena-border);
+}
+
+.athena-mode .data-table tr:hover td {
+  background: rgba(201, 162, 39, 0.03);
+}
+
+.athena-mode .data-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Status indicators */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: var(--space-xs);
+}
+
+.status-dot.online { background: var(--bronze-patina); }
+.status-dot.offline { background: var(--terracotta); }
+.status-dot.pending { background: var(--olive-gold); }
+
+/* Signal type badges */
+.signal-badge {
+  display: inline-block;
+  padding: 2px var(--space-sm);
+  border-radius: var(--space-xs);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.signal-badge.approval {
+  background: rgba(107, 142, 107, 0.2);
+  color: var(--bronze-patina);
+}
+
+.signal-badge.rejection {
+  background: rgba(196, 120, 90, 0.2);
+  color: var(--terracotta);
+}
+
+/* ========================================
+   ATHENA: FILTERS
+   ======================================== */
+.athena-mode .filters-bar {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--athena-bg);
+  border-bottom: 1px solid var(--athena-border);
+  flex-wrap: wrap;
+}
+
+.athena-mode .filter-select,
+.athena-mode .filter-input {
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--athena-surface);
+  border: 1px solid var(--athena-border);
+  border-radius: var(--space-xs);
+  color: var(--athena-text);
+  font-size: 0.75rem;
+  font-family: inherit;
+}
+
+.athena-mode .filter-select:focus,
+.athena-mode .filter-input:focus {
+  outline: none;
+  border-color: var(--gold-leaf);
+}
+
+.athena-mode .btn {
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  border-radius: var(--space-xs);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-smooth);
+}
+
+.athena-mode .btn-primary {
+  background: var(--gold-leaf);
+  color: var(--athena-bg);
+}
+
+.athena-mode .btn-primary:hover {
+  background: #d4ad2f;
+}
+
+.athena-mode .btn-secondary {
+  background: var(--athena-surface);
+  color: var(--athena-text);
+  border: 1px solid var(--athena-border);
+}
+
+.athena-mode .btn-secondary:hover {
+  background: var(--athena-border);
+}
+
+/* ========================================
+   ATHENA: STATS GRID
+   ======================================== */
+.athena-mode .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-sm);
+  padding: var(--space-md);
+}
+
+.athena-mode .stat-card {
+  background: var(--athena-bg);
+  border: 1px solid var(--athena-border);
+  border-radius: var(--space-xs);
+  padding: var(--space-md);
+  text-align: center;
+}
+
+.athena-mode .stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--gold-leaf);
+}
+
+.athena-mode .stat-label {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--athena-muted);
+  margin-top: var(--space-xs);
+}
+
+/* ========================================
+   ATHENA: PROGRESS BARS
+   ======================================== */
+.progress-bar {
+  height: 4px;
+  background: var(--athena-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--gold-leaf);
+  transition: width var(--transition-smooth);
+}
+
+.progress-fill.positive { background: var(--bronze-patina); }
+.progress-fill.negative { background: var(--terracotta); }
+
+/* ========================================
+   ATHENA: GRID LAYOUT
+   ======================================== */
+.athena-mode .main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+@media (max-width: 1024px) {
+  .athena-mode .main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.athena-mode .full-width {
+  grid-column: 1 / -1;
+}
+
+/* ========================================
+   SHARED: TABS
+   ======================================== */
+.tabs {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid;
+}
+
+.sophia-mode .tabs {
+  border-color: var(--stone-mid);
+}
+
+.athena-mode .tabs {
+  border-color: var(--athena-border);
+  background: var(--athena-bg);
+}
+
+.tab-btn {
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  background: transparent;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all var(--transition-smooth);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.sophia-mode .tab-btn {
+  color: var(--text-muted);
+}
+
+.athena-mode .tab-btn {
+  color: var(--athena-muted);
+}
+
+.tab-btn.active {
+  border-bottom-color: var(--gold-leaf);
+  color: var(--gold-leaf);
+}
+
+.tab-btn:hover:not(.active) {
+  color: var(--gold-leaf);
+}
+
+/* ========================================
+   SHARED: SCROLLBAR
+   ======================================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.sophia-mode ::-webkit-scrollbar-track {
+  background: var(--stone-warm);
+}
+
+.sophia-mode ::-webkit-scrollbar-thumb {
+  background: var(--stone-mid);
+  border-radius: 4px;
+}
+
+.athena-mode ::-webkit-scrollbar-track {
+  background: var(--athena-bg);
+}
+
+.athena-mode ::-webkit-scrollbar-thumb {
+  background: var(--athena-border);
+  border-radius: 4px;
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+/* Flow lines (SVG animation) */
+@keyframes flow {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.flow-line {
+  stroke-dasharray: 5 3;
+  animation: flow 2s linear infinite;
+}
+
+/* Fade in */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+/* Slide up */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.4s ease-out forwards;
+}
+
+/* Page transition */
+.page-transition {
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+.page-transition.leaving {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 768px) {
+  .sophia-mode .oracle-title {
+    font-size: 2.5rem;
+    letter-spacing: 0.15em;
+  }
+
+  .sophia-mode .container {
+    padding: var(--space-md);
+  }
+
+  .header {
+    flex-direction: column;
+    gap: var(--space-md);
+    text-align: center;
+  }
+
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================
+   UTILITIES
+   ======================================== */
+.text-gold { color: var(--gold-leaf); }
+.text-muted { color: var(--text-muted); }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+.mt-sm { margin-top: var(--space-sm); }
+.mt-md { margin-top: var(--space-md); }
+.mt-lg { margin-top: var(--space-lg); }
+.mt-xl { margin-top: var(--space-xl); }
+
+.mb-sm { margin-bottom: var(--space-sm); }
+.mb-md { margin-bottom: var(--space-md); }
+.mb-lg { margin-bottom: var(--space-lg); }
+
+.p-md { padding: var(--space-md); }
+.p-lg { padding: var(--space-lg); }
+
+.hidden { display: none !important; }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}

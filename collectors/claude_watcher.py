@@ -22,7 +22,7 @@ import os
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 # Configuration
 NOESIS_URL = os.getenv("NOESIS_URL", "http://localhost:8001")
@@ -47,6 +47,33 @@ INTENT_PATTERNS: Dict[str, List[str]] = {
     "deploy": ["deploy", "release", "production", "publish", "ship"],
 }
 
+# Preference signal patterns (for PreferenceLearner integration)
+APPROVAL_PATTERNS: List[str] = [
+    r"\b(sim|yes|ok|perfeito|otimo|excelente|isso|gostei)\b",
+    r"\b(aceito|aprovo|pode|manda|vai|bora|certo|correto)\b",
+    r"^(s|y|ok|sim)$",
+    r"(thumbs.?up|great|good|nice|awesome)",
+]
+
+REJECTION_PATTERNS: List[str] = [
+    r"\b(nao|no|nope|errado|ruim|feio|pare|espera)\b",
+    r"\b(rejeito|recuso|para|cancela|volta|desfaz)\b",
+    r"\b(menos|mais simples|muito|demais|longo)\b",
+    r"(thumbs.?down|bad|wrong|incorrect)",
+]
+
+# Category keywords for classification
+CATEGORY_KEYWORDS: Dict[str, List[str]] = {
+    "code_style": ["formatacao", "estilo", "naming", "indent", "lint", "format", "style"],
+    "verbosity": ["verboso", "longo", "curto", "resumo", "detalhado", "verbose", "brief"],
+    "testing": ["teste", "test", "coverage", "mock", "assert", "spec", "unit"],
+    "architecture": ["arquitetura", "estrutura", "pattern", "design", "refactor"],
+    "documentation": ["doc", "comment", "readme", "docstring", "jsdoc"],
+    "workflow": ["commit", "branch", "git", "deploy", "ci", "cd", "push"],
+    "security": ["security", "auth", "password", "token", "secret", "vulnerability"],
+    "performance": ["performance", "speed", "fast", "slow", "optimize", "cache"],
+}
+
 
 def detect_intention(message: str) -> str:
     """
@@ -66,6 +93,78 @@ def detect_intention(message: str) -> str:
                 return intent
 
     return "unknown"
+
+
+def detect_preference_signal(message: str) -> Optional[str]:
+    """
+    Detect preference signal (approval/rejection) from message.
+
+    Args:
+        message: User message text.
+
+    Returns:
+        "approval", "rejection", or None.
+    """
+    message_lower = message.lower()
+
+    # Check approval patterns
+    for pattern in APPROVAL_PATTERNS:
+        if re.search(pattern, message_lower, re.IGNORECASE):
+            return "approval"
+
+    # Check rejection patterns
+    for pattern in REJECTION_PATTERNS:
+        if re.search(pattern, message_lower, re.IGNORECASE):
+            return "rejection"
+
+    return None
+
+
+def detect_category(message: str) -> str:
+    """
+    Detect category from message content.
+
+    Args:
+        message: User message text.
+
+    Returns:
+        Category string or "general".
+    """
+    message_lower = message.lower()
+    scores: Dict[str, int] = {}
+
+    for category, keywords in CATEGORY_KEYWORDS.items():
+        score = sum(1 for kw in keywords if kw in message_lower)
+        if score > 0:
+            scores[category] = score
+
+    if scores:
+        return max(scores, key=lambda k: scores[k])
+
+    return "general"
+
+
+def calculate_signal_strength(message: str) -> float:
+    """
+    Calculate signal strength based on message length.
+
+    Short, direct responses are stronger signals.
+
+    Args:
+        message: User message text.
+
+    Returns:
+        Strength 0.0-1.0.
+    """
+    word_count = len(message.split())
+
+    if word_count <= 3:
+        return 0.9  # "sim", "ok", "perfeito"
+    if word_count <= 10:
+        return 0.7  # Short response
+    if word_count <= 30:
+        return 0.5  # Medium response
+    return 0.3  # Long response (diluted feedback)
 
 
 def extract_files_touched(message: str) -> List[str]:
@@ -171,6 +270,7 @@ class SessionTracker:  # pylint: disable=too-few-public-methods
         Process single JSONL entry.
 
         Extracts metadata without capturing content.
+        Also detects preference signals for PreferenceLearner integration.
 
         Args:
             entry: Parsed JSON entry.
@@ -181,7 +281,7 @@ class SessionTracker:  # pylint: disable=too-few-public-methods
         if role != "user":
             return
 
-        # Extract content for intent detection (then discard content)
+        # Extract content for detection (then discard content)
         content = entry.get("content", "")
         if not content:
             return
@@ -190,6 +290,11 @@ class SessionTracker:  # pylint: disable=too-few-public-methods
         intention = detect_intention(content)
         files_touched = extract_files_touched(content)
 
+        # Detect preference signal (for PreferenceLearner)
+        preference_signal = detect_preference_signal(content)
+        category = detect_category(content) if preference_signal else "general"
+        strength = calculate_signal_strength(content) if preference_signal else 0.0
+
         # Create event (no content stored)
         event = {
             "event_type": intention,
@@ -197,21 +302,29 @@ class SessionTracker:  # pylint: disable=too-few-public-methods
             "project": project,
             "files_touched": files_touched,
             "intention": intention,
+            # Preference signal data (for PreferenceLearner)
+            "preference_signal": preference_signal,
+            "preference_category": category,
+            "signal_strength": strength,
         }
 
         self.session_events.append(event)
-        logger.debug("Session event: %s (%s)", intention, project)
+        logger.debug("Session event: %s (%s), signal: %s", intention, project, preference_signal)
 
-        # Send to NOESIS
+        # Send to NOESIS and store locally
         await self._send_event(event)
 
     async def _send_event(self, event: Dict[str, Any]) -> None:
         """
-        Send event to NOESIS.
+        Send event to NOESIS and store locally.
 
         Args:
             event: Event metadata to send.
         """
+        # Store locally in ActivityStore for StyleLearner/PreferenceLearner
+        self._store_locally(event)
+
+        # Send to NOESIS
         try:
             import httpx  # pylint: disable=import-outside-toplevel
 
@@ -224,6 +337,87 @@ class SessionTracker:  # pylint: disable=too-few-public-methods
             logger.debug("httpx not available")
         except Exception as exc:  # pylint: disable=broad-except
             logger.debug("Failed to send event: %s", exc)
+
+    def _store_locally(self, event: Dict[str, Any]) -> None:
+        """
+        Store event in local ActivityStore and feed StyleLearner.
+
+        Includes preference signal data for PreferenceLearner integration.
+
+        Args:
+            event: Event metadata to store.
+        """
+        try:
+            from memory.activity_store import get_activity_store  # pylint: disable=import-outside-toplevel
+
+            store = get_activity_store()
+
+            # Parse timestamp or use now
+            ts_str = event.get("timestamp", "")
+            try:
+                ts = datetime.fromisoformat(ts_str)
+            except ValueError:
+                ts = datetime.now()
+
+            data = {
+                "intention": event.get("intention", "unknown"),
+                "event_type": event.get("event_type", "unknown"),
+                "project": event.get("project", ""),
+                "files_touched": event.get("files_touched", []),
+                # Preference signal data for PreferenceLearner
+                "preference_signal": event.get("preference_signal"),
+                "preference_category": event.get("preference_category", "general"),
+                "signal_strength": event.get("signal_strength", 0.0),
+            }
+
+            store.add(
+                watcher_type="claude",
+                timestamp=ts,
+                data=data,
+            )
+
+            # Also feed StyleLearner for communication pattern analysis
+            self._feed_style_learner(data)
+
+            logger.debug("Stored claude event locally: %s, signal: %s",
+                        event.get("intention"), event.get("preference_signal"))
+        except ImportError:
+            logger.debug("ActivityStore not available, skipping local storage")
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.warning("Failed to store locally: %s", exc)
+
+    def _feed_style_learner(self, data: Dict[str, Any]) -> None:
+        """
+        Feed claude data to StyleLearner for communication pattern analysis.
+
+        Args:
+            data: Claude event data dict.
+        """
+        try:
+            from learners import get_style_learner  # pylint: disable=import-outside-toplevel
+            learner = get_style_learner()
+            learner.add_claude_sample(data)
+        except ImportError:
+            pass  # StyleLearner not available
+        except Exception:  # pylint: disable=broad-except
+            pass  # Don't fail if StyleLearner has issues
+
+    async def run(self) -> None:
+        """
+        Run the tracker loop.
+
+        Polls Claude session files at regular intervals.
+        Used by daimon_daemon.py for unified startup.
+        """
+        logger.info("DAIMON Claude Watcher started")
+        logger.info("Monitoring: %s", CLAUDE_DIR)
+
+        try:
+            while True:
+                await self.scan_projects()
+                await asyncio.sleep(POLL_INTERVAL_SECONDS)
+        except asyncio.CancelledError:
+            logger.info("DAIMON Claude Watcher stopped")
 
 
 async def run_daemon() -> None:

@@ -15,19 +15,26 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter
-from pydantic import BaseModel, Field
 
 from .quick_check import QuickCheckRequest, QuickCheckResponse, analyze_prompt
+from .daimon_models import (
+    ShellHeartbeat,
+    ShellBatchRequest,
+    ShellBatchResponse,
+    ClaudeEvent,
+    ClaudeEventResponse,
+    SessionEndRequest,
+    SessionEndResponse,
+    PreferencesResponse,
+    ReflectResponse,
+    MemoryItem,
+    RecentMemoriesResponse,
+)
 
 logger = logging.getLogger(__name__)
 
 # Router with DAIMON prefix
 router = APIRouter(prefix="/api/daimon", tags=["DAIMON"])
-
-
-# ============================================================================
-# Quick-Check Endpoint (Sprint 4)
-# ============================================================================
 
 
 @router.post("/quick-check", response_model=QuickCheckResponse)
@@ -37,45 +44,8 @@ async def quick_check(request: QuickCheckRequest) -> QuickCheckResponse:
 
     Analyzes prompt for risk keywords and returns salience score.
     Target latency: <100ms (no LLM calls).
-
-    Args:
-        request: QuickCheckRequest with prompt to analyze.
-
-    Returns:
-        QuickCheckResponse with salience and mode.
     """
     return analyze_prompt(request.prompt)
-
-
-# ============================================================================
-# Shell Batch Endpoint (Sprint 7)
-# ============================================================================
-
-
-class ShellHeartbeat(BaseModel):
-    """Single shell command heartbeat."""
-
-    timestamp: str = Field(..., description="ISO timestamp")
-    command: str = Field(..., description="Shell command executed")
-    pwd: str = Field(..., description="Working directory")
-    exit_code: int = Field(..., description="Command exit code")
-    duration: float = Field(0.0, description="Execution duration in seconds")
-    git_branch: str = Field("", description="Current git branch if in repo")
-
-
-class ShellBatchRequest(BaseModel):
-    """Batch of shell heartbeats with detected patterns."""
-
-    heartbeats: List[ShellHeartbeat] = Field(..., description="List of heartbeats")
-    patterns: Dict[str, Any] = Field(default_factory=dict, description="Detected patterns")
-
-
-class ShellBatchResponse(BaseModel):
-    """Response for shell batch endpoint."""
-
-    status: str = Field(..., description="Processing status")
-    stored: int = Field(..., description="Number of heartbeats stored")
-    insights: List[str] = Field(default_factory=list, description="Generated insights")
 
 
 @router.post("/shell/batch", response_model=ShellBatchResponse)
@@ -92,6 +62,36 @@ async def receive_shell_batch(batch: ShellBatchRequest) -> ShellBatchResponse:
         ShellBatchResponse with processing status.
     """
     insights: List[str] = []
+    stored_count = 0
+
+    # Actually store in ActivityStore
+    try:
+        from datetime import datetime
+        from memory.activity_store import get_activity_store
+        store = get_activity_store()
+
+        for hb in batch.heartbeats:
+            try:
+                ts = datetime.fromisoformat(hb.timestamp)
+            except ValueError:
+                ts = datetime.now()
+
+            store.add(
+                watcher_type="shell",
+                timestamp=ts,
+                data={
+                    "command": hb.command,
+                    "pwd": hb.pwd,
+                    "exit_code": hb.exit_code,
+                    "duration": hb.duration,
+                    "git_branch": hb.git_branch,
+                },
+            )
+            stored_count += 1
+    except ImportError:
+        logger.debug("ActivityStore not available")
+    except Exception as e:  # pylint: disable=broad-except
+        logger.warning("Failed to store heartbeats: %s", e)
 
     # Detect frustration pattern
     if batch.patterns.get("possible_frustration"):
@@ -106,31 +106,9 @@ async def receive_shell_batch(batch: ShellBatchRequest) -> ShellBatchResponse:
 
     return ShellBatchResponse(
         status="ok",
-        stored=len(batch.heartbeats),
+        stored=stored_count,  # Now honest!
         insights=insights,
     )
-
-
-# ============================================================================
-# Claude Event Endpoint (Sprint 7)
-# ============================================================================
-
-
-class ClaudeEvent(BaseModel):
-    """Event from Claude Code session."""
-
-    event_type: str = Field(..., description="Event type: create, fix, refactor, understand, delete")
-    timestamp: str = Field(..., description="ISO timestamp")
-    project: str = Field("", description="Project identifier")
-    files_touched: List[str] = Field(default_factory=list, description="Files involved")
-    intention: str = Field("", description="Detected intention")
-
-
-class ClaudeEventResponse(BaseModel):
-    """Response for Claude event endpoint."""
-
-    status: str = Field(..., description="Processing status")
-    stored: bool = Field(..., description="Whether event was stored")
 
 
 @router.post("/claude/event", response_model=ClaudeEventResponse)
@@ -147,33 +125,39 @@ async def receive_claude_event(event: ClaudeEvent) -> ClaudeEventResponse:
         ClaudeEventResponse with processing status.
     """
     logger.debug("DAIMON: Claude event received: %s", event.event_type)
+    stored = False
+
+    # Actually store in ActivityStore
+    try:
+        from datetime import datetime
+        from memory.activity_store import get_activity_store
+        store = get_activity_store()
+
+        try:
+            ts = datetime.fromisoformat(event.timestamp)
+        except ValueError:
+            ts = datetime.now()
+
+        store.add(
+            watcher_type="claude",
+            timestamp=ts,
+            data={
+                "intention": event.intention,
+                "event_type": event.event_type,
+                "project": event.project,
+                "files_touched": event.files_touched,
+            },
+        )
+        stored = True
+    except ImportError:
+        logger.debug("ActivityStore not available")
+    except Exception as e:  # pylint: disable=broad-except
+        logger.warning("Failed to store claude event: %s", e)
 
     return ClaudeEventResponse(
         status="ok",
-        stored=True,
+        stored=stored,  # Now honest!
     )
-
-
-# ============================================================================
-# Session End Endpoint (Sprint 7)
-# ============================================================================
-
-
-class SessionEndRequest(BaseModel):
-    """Request to record session end as precedent."""
-
-    session_id: str = Field(..., description="Session identifier")
-    summary: str = Field(..., description="Session summary")
-    outcome: str = Field("success", description="Session outcome: success, failure, partial")
-    duration_minutes: float = Field(0.0, description="Session duration")
-    files_changed: int = Field(0, description="Number of files modified")
-
-
-class SessionEndResponse(BaseModel):
-    """Response for session end endpoint."""
-
-    status: str = Field(..., description="Processing status")
-    precedent_id: Optional[str] = Field(None, description="Created precedent ID if significant")
 
 
 @router.post("/session/end", response_model=SessionEndResponse)
@@ -181,7 +165,7 @@ async def record_session_end(request: SessionEndRequest) -> SessionEndResponse:
     """
     Record end of Claude Code session.
 
-    Significant sessions are stored as precedents for future reference.
+    Significant sessions are stored as precedents via NOESIS Tribunal.
 
     Args:
         request: SessionEndRequest with session summary.
@@ -196,15 +180,184 @@ async def record_session_end(request: SessionEndRequest) -> SessionEndResponse:
         request.files_changed,
     )
 
-    # Only create precedent for significant sessions
+    # Store session in ActivityStore
+    try:
+        from datetime import datetime
+        from memory.activity_store import get_activity_store
+        store = get_activity_store()
+        store.add(
+            watcher_type="session",
+            timestamp=datetime.now(),
+            data={
+                "session_id": request.session_id,
+                "summary": request.summary,
+                "outcome": request.outcome,
+                "duration_minutes": request.duration_minutes,
+                "files_changed": request.files_changed,
+            },
+        )
+    except ImportError:
+        pass
+    except Exception as e:  # pylint: disable=broad-except
+        logger.warning("Failed to store session: %s", e)
+
+    # Only create precedent for significant sessions via real NOESIS integration
     precedent_id: Optional[str] = None
     if request.files_changed >= 5 or request.duration_minutes >= 30:
-        precedent_id = f"sess_{request.session_id[:8]}"
-        logger.info("DAIMON: Created precedent %s", precedent_id)
+        precedent_id = await _create_real_precedent(request)
 
     return SessionEndResponse(
         status="ok",
         precedent_id=precedent_id,
+    )
+
+
+async def _create_real_precedent(request: SessionEndRequest) -> Optional[str]:
+    """
+    Create real precedent via NOESIS Tribunal integration.
+
+    Args:
+        request: Session end request data.
+
+    Returns:
+        Precedent ID if created successfully.
+    """
+    import os
+    import uuid
+
+    noesis_url = os.getenv("NOESIS_REFLECTOR_URL", "http://localhost:8002")
+
+    try:
+        import httpx  # pylint: disable=import-outside-toplevel
+
+        payload = {
+            "trace_id": str(uuid.uuid4()),
+            "agent_id": "daimon-session",
+            "task": f"Session: {request.summary[:100]}",
+            "action": request.summary,
+            "outcome": request.outcome,
+            "reasoning_trace": f"Files: {request.files_changed}, Duration: {request.duration_minutes}min",
+        }
+
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.post(
+                f"{noesis_url}/reflect/verdict",
+                json=payload,
+            )
+            if response.status_code == 200:
+                result = response.json()
+                precedent_id = result.get("precedent_id") or f"sess_{request.session_id[:8]}"
+                logger.info("DAIMON: Created real precedent %s via NOESIS", precedent_id)
+                return precedent_id
+    except ImportError:
+        logger.debug("httpx not available for NOESIS integration")
+    except Exception as e:  # pylint: disable=broad-except
+        logger.warning("NOESIS precedent creation failed: %s", e)
+
+    # Fallback: generate local ID if NOESIS unavailable
+    return f"local_{request.session_id[:8]}"
+
+
+@router.get("/preferences/learned", response_model=PreferencesResponse)
+async def get_learned_preferences() -> PreferencesResponse:
+    """
+    Get learned preferences from DAIMON reflection engine.
+
+    Returns preferences detected from Claude Code session patterns.
+
+    Returns:
+        PreferencesResponse with categorized preferences.
+    """
+    try:
+        from learners import get_engine
+        engine = get_engine()
+        status = engine.get_status()
+
+        return PreferencesResponse(
+            preferences=status.get("current_preferences", {}),
+            total_signals=status.get("signals_in_memory", 0),
+            last_reflection=status.get("last_reflection"),
+            approval_rate=_calculate_approval_rate(status.get("current_preferences", {})),
+        )
+    except ImportError:
+        logger.warning("DAIMON learners not available")
+        return PreferencesResponse()
+
+
+def _calculate_approval_rate(preferences: Dict[str, Any]) -> float:
+    """Calculate overall approval rate from preferences."""
+    if not preferences:
+        return 0.0
+    rates = [p.get("approval_rate", 0.0) for p in preferences.values()]
+    return sum(rates) / len(rates) if rates else 0.0
+
+
+@router.post("/reflect", response_model=ReflectResponse)
+async def trigger_reflection() -> ReflectResponse:
+    """
+    Trigger manual reflection.
+
+    Scans recent Claude Code sessions and updates preferences.
+
+    Returns:
+        ReflectResponse with reflection results.
+    """
+    try:
+        from learners import get_engine
+        engine = get_engine()
+        result = await engine.reflect()
+
+        return ReflectResponse(
+            status="completed",
+            signals_count=result.get("signals_count", 0),
+            insights_count=result.get("insights_count", 0),
+            updated=result.get("updated", False),
+            elapsed_seconds=result.get("elapsed_seconds", 0.0),
+        )
+    except ImportError:
+        logger.warning("DAIMON learners not available")
+        return ReflectResponse(status="unavailable")
+    except Exception as e:
+        logger.error("Reflection failed: %s", e)
+        return ReflectResponse(status=f"error: {e}")
+
+
+@router.get("/memories/recent", response_model=RecentMemoriesResponse)
+async def get_recent_memories(limit: int = 20) -> RecentMemoriesResponse:
+    """
+    Get recent memories for dashboard display.
+
+    Returns most recent shell commands and Claude events.
+
+    Args:
+        limit: Maximum number of memories to return.
+
+    Returns:
+        RecentMemoriesResponse with memory items.
+    """
+    memories: List[MemoryItem] = []
+
+    # Try to get signals from preference learner
+    try:
+        from learners import get_engine
+        engine = get_engine()
+
+        for i, signal in enumerate(engine.learner.signals[-limit:]):
+            memories.append(
+                MemoryItem(
+                    id=f"sig_{i}",
+                    timestamp=signal.timestamp.isoformat(),
+                    type="preference",
+                    content=f"[{signal.signal_type}] {signal.category}: {signal.content[:100]}",
+                    importance=0.6 if signal.signal_type == "rejection" else 0.4,
+                )
+            )
+    except ImportError:
+        pass
+
+    return RecentMemoriesResponse(
+        memories=sorted(memories, key=lambda m: m.timestamp, reverse=True)[:limit],
+        total_count=len(memories),
     )
 
 
@@ -229,5 +382,8 @@ async def daimon_health() -> Dict[str, Any]:
             "/api/daimon/shell/batch",
             "/api/daimon/claude/event",
             "/api/daimon/session/end",
+            "/api/daimon/preferences/learned",
+            "/api/daimon/reflect",
+            "/api/daimon/memories/recent",
         ],
     }

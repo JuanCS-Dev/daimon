@@ -198,6 +198,71 @@ class TestScanProjects:
             assert isinstance(tracker.session_events, list)
 
     @pytest.mark.asyncio
+    async def test_scan_nonexistent_directory(self) -> None:
+        """Test scanning when CLAUDE_DIR doesn't exist (lines 120-121)."""
+        import tempfile
+        from pathlib import Path
+        import collectors.claude_watcher as cw
+
+        original_dir = cw.CLAUDE_DIR
+        cw.CLAUDE_DIR = Path("/nonexistent/path/that/doesnt/exist")
+
+        try:
+            tracker = SessionTracker()
+            await tracker.scan_projects()
+            # Should return early, no events
+            assert len(tracker.session_events) == 0
+        finally:
+            cw.CLAUDE_DIR = original_dir
+
+    @pytest.mark.asyncio
+    async def test_scan_with_file_instead_of_directory(self) -> None:
+        """Test scanning when project is a file, not directory (line 125)."""
+        import tempfile
+        from pathlib import Path
+        import collectors.claude_watcher as cw
+
+        original_dir = cw.CLAUDE_DIR
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            projects_dir = Path(tmpdir)
+            # Create a FILE instead of directory
+            (projects_dir / "not-a-directory").write_text("I'm a file")
+
+            cw.CLAUDE_DIR = projects_dir
+
+            try:
+                tracker = SessionTracker()
+                await tracker.scan_projects()
+                # Should skip the file, no events
+                assert len(tracker.session_events) == 0
+            finally:
+                cw.CLAUDE_DIR = original_dir
+
+    @pytest.mark.asyncio
+    async def test_scan_project_without_sessions_dir(self) -> None:
+        """Test scanning project without sessions directory (line 129)."""
+        import tempfile
+        from pathlib import Path
+        import collectors.claude_watcher as cw
+
+        original_dir = cw.CLAUDE_DIR
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            projects_dir = Path(tmpdir)
+            # Create project dir but NO sessions subdir
+            (projects_dir / "my-project").mkdir()
+
+            cw.CLAUDE_DIR = projects_dir
+
+            try:
+                tracker = SessionTracker()
+                await tracker.scan_projects()
+                assert len(tracker.session_events) == 0
+            finally:
+                cw.CLAUDE_DIR = original_dir
+
+    @pytest.mark.asyncio
     async def test_scan_with_temp_structure(self) -> None:
         """Test scanning with temporary Claude directory structure."""
         import tempfile
@@ -238,12 +303,60 @@ class TestProcessFile:
 
     @pytest.mark.asyncio
     async def test_process_file_not_found(self) -> None:
-        """Test processing non-existent file."""
+        """Test processing non-existent file (line 166-167 IOError)."""
         from pathlib import Path
         tracker = SessionTracker()
-        # Should not raise
+        # Should not raise, triggers IOError handler
         await tracker._process_file(Path("/nonexistent/file.jsonl"), "test")
         assert len(tracker.session_events) == 0
+
+    @pytest.mark.asyncio
+    async def test_process_file_already_read(self) -> None:
+        """Test processing file that was already read (line 148)."""
+        import tempfile
+        import json
+        from pathlib import Path
+
+        tracker = SessionTracker()
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False) as f:
+            f.write(json.dumps({"role": "user", "content": "Test"}) + "\n")
+            temp_path = Path(f.name)
+
+        try:
+            # First read
+            await tracker._process_file(temp_path, "test")
+            assert len(tracker.session_events) == 1
+
+            # Second read - file unchanged, should return early (line 148)
+            await tracker._process_file(temp_path, "test")
+            # Still only 1 event (not re-processed)
+            assert len(tracker.session_events) == 1
+        finally:
+            temp_path.unlink()
+
+    @pytest.mark.asyncio
+    async def test_process_file_with_empty_lines(self) -> None:
+        """Test processing file with empty lines (line 158)."""
+        import tempfile
+        import json
+        from pathlib import Path
+
+        tracker = SessionTracker()
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False) as f:
+            f.write(json.dumps({"role": "user", "content": "Test"}) + "\n")
+            f.write("\n")  # Empty line
+            f.write("   \n")  # Whitespace only
+            f.write(json.dumps({"role": "user", "content": "Test2"}) + "\n")
+            temp_path = Path(f.name)
+
+        try:
+            await tracker._process_file(temp_path, "test")
+            # Should have processed 2 events, skipping empty lines
+            assert len(tracker.session_events) == 2
+        finally:
+            temp_path.unlink()
 
     @pytest.mark.asyncio
     async def test_process_file_with_data(self) -> None:
@@ -273,7 +386,7 @@ class TestProcessFile:
 
     @pytest.mark.asyncio
     async def test_process_file_invalid_json(self) -> None:
-        """Test processing file with invalid JSON lines."""
+        """Test processing file with invalid JSON lines (line 163-164)."""
         import tempfile
         from pathlib import Path
 
@@ -303,16 +416,124 @@ class TestMainFunction:
         from collectors.claude_watcher import main
 
         old_stderr = sys.stderr
+        old_stdout = sys.stdout
         sys.stderr = StringIO()
+        sys.stdout = StringIO()
         old_argv = sys.argv
         sys.argv = ["claude_watcher.py"]
 
         try:
             main()
             # Should print help to stderr or stdout
+            output = sys.stdout.getvalue() + sys.stderr.getvalue()
+            assert "claude" in output.lower() or "usage" in output.lower() or "daemon" in output.lower()
         finally:
             sys.stderr = old_stderr
+            sys.stdout = old_stdout
             sys.argv = old_argv
+
+
+class TestSendEventExceptions:
+    """Test _send_event exception handling paths."""
+
+    @pytest.mark.asyncio
+    async def test_send_event_connection_refused(self) -> None:
+        """Test _send_event handles connection errors (lines 225-226)."""
+        import collectors.claude_watcher as cw
+
+        original_url = cw.NOESIS_URL
+        cw.NOESIS_URL = "http://127.0.0.1:59999"  # Non-existent port
+
+        try:
+            tracker = SessionTracker()
+            event = {
+                "event_type": "test",
+                "timestamp": "2025-12-12T12:00:00",
+                "project": "test",
+                "files_touched": [],
+                "intention": "test",
+            }
+            # Should not raise - exception is logged
+            await tracker._send_event(event)
+        finally:
+            cw.NOESIS_URL = original_url
+
+    @pytest.mark.asyncio
+    async def test_send_event_timeout(self) -> None:
+        """Test _send_event handles timeout (lines 225-226)."""
+        tracker = SessionTracker()
+        event = {
+            "event_type": "timeout_test",
+            "timestamp": "2025-12-12T12:00:00",
+            "project": "test",
+            "files_touched": [],
+            "intention": "test",
+        }
+        # Should not raise even with potentially slow endpoint
+        await tracker._send_event(event)
+
+
+class TestRunDaemon:
+    """Test run_daemon function."""
+
+    @pytest.mark.asyncio
+    async def test_run_daemon_cancellation(self) -> None:
+        """Test run_daemon handles CancelledError (lines 239-244)."""
+        import asyncio
+        from collectors.claude_watcher import run_daemon
+
+        # Create and cancel the daemon task
+        task = asyncio.create_task(run_daemon())
+
+        # Let it start
+        await asyncio.sleep(0.1)
+
+        # Cancel it
+        task.cancel()
+
+        # Should handle cancellation gracefully
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass  # Expected
+
+
+class TestProcessEntryAdvanced:
+    """Advanced tests for _process_entry."""
+
+    @pytest.mark.asyncio
+    async def test_process_entry_with_all_intents(self) -> None:
+        """Test processing entries with various intentions."""
+        tracker = SessionTracker()
+
+        test_cases = [
+            ("Create a new API endpoint", "create"),
+            ("Fix the authentication bug", "fix"),
+            ("Refactor the database module", "refactor"),
+            ("Explain how this works", "understand"),
+            ("Delete the old files", "delete"),
+            ("Test the payment system", "test"),
+            ("Deploy to production", "deploy"),
+        ]
+
+        for content, expected_intent in test_cases:
+            entry = {"role": "user", "content": content}
+            await tracker._process_entry(entry, "test-project")
+            assert tracker.session_events[-1]["intention"] == expected_intent
+
+    @pytest.mark.asyncio
+    async def test_process_entry_with_file_paths(self) -> None:
+        """Test extracting file paths from content."""
+        tracker = SessionTracker()
+
+        entry = {
+            "role": "user",
+            "content": "Edit the file 'src/components/App.tsx' and also check config.json"
+        }
+        await tracker._process_entry(entry, "test-project")
+
+        event = tracker.session_events[-1]
+        assert len(event["files_touched"]) > 0
 
 
 if __name__ == "__main__":

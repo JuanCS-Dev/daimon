@@ -336,6 +336,254 @@ class TestMainFunction:
             sys.stdout = old_stdout
             sys.argv = old_argv
 
+    def test_main_no_args_shows_help(self) -> None:
+        """Test main with no args shows help (lines 326-327)."""
+        import sys
+        from io import StringIO
+        from collectors.shell_watcher import main
+
+        old_stderr = sys.stderr
+        old_stdout = sys.stdout
+        sys.stderr = StringIO()
+        sys.stdout = StringIO()
+        old_argv = sys.argv
+        sys.argv = ["shell_watcher.py"]
+
+        try:
+            main()
+            # Should print help to stdout or stderr
+            output = sys.stdout.getvalue() + sys.stderr.getvalue()
+            assert "shell_watcher" in output.lower() or "usage" in output.lower() or "daemon" in output.lower()
+        finally:
+            sys.stderr = old_stderr
+            sys.stdout = old_stdout
+            sys.argv = old_argv
+
+
+class TestHandleClient:
+    """Tests for socket client handling."""
+
+    @pytest.mark.asyncio
+    async def test_handle_client_valid_json(self) -> None:
+        """Test handle_client with valid JSON data (lines 211-217)."""
+        import asyncio
+        import json
+        from collectors.shell_watcher import handle_client
+
+        # Create mock reader/writer
+        data = json.dumps({
+            "timestamp": "2025-12-12T12:00:00",
+            "command": "ls -la",
+            "pwd": "/home/test",
+            "exit_code": 0,
+        }).encode()
+
+        reader = asyncio.StreamReader()
+        reader.feed_data(data)
+        reader.feed_eof()
+
+        # Create a mock writer
+        class MockWriter:
+            def __init__(self):
+                self.closed = False
+
+            def close(self):
+                self.closed = True
+
+            async def wait_closed(self):
+                pass
+
+        writer = MockWriter()
+
+        await handle_client(reader, writer)
+        assert writer.closed
+
+    @pytest.mark.asyncio
+    async def test_handle_client_invalid_json(self) -> None:
+        """Test handle_client with invalid JSON (line 218-219)."""
+        import asyncio
+        from collectors.shell_watcher import handle_client
+
+        reader = asyncio.StreamReader()
+        reader.feed_data(b"not valid json")
+        reader.feed_eof()
+
+        class MockWriter:
+            def __init__(self):
+                self.closed = False
+
+            def close(self):
+                self.closed = True
+
+            async def wait_closed(self):
+                pass
+
+        writer = MockWriter()
+
+        # Should not raise, handles exception internally
+        await handle_client(reader, writer)
+        assert writer.closed
+
+    @pytest.mark.asyncio
+    async def test_handle_client_empty_data(self) -> None:
+        """Test handle_client with empty data (line 213 - no data path)."""
+        import asyncio
+        from collectors.shell_watcher import handle_client
+
+        reader = asyncio.StreamReader()
+        reader.feed_eof()  # No data, just EOF
+
+        class MockWriter:
+            def __init__(self):
+                self.closed = False
+
+            def close(self):
+                self.closed = True
+
+            async def wait_closed(self):
+                pass
+
+        writer = MockWriter()
+
+        await handle_client(reader, writer)
+        assert writer.closed
+
+    @pytest.mark.asyncio
+    async def test_handle_client_exception(self) -> None:
+        """Test handle_client with general exception (lines 220-221)."""
+        import asyncio
+        from collectors.shell_watcher import handle_client
+
+        # Create reader that raises on read
+        class ErrorReader:
+            async def read(self, n):
+                raise RuntimeError("Simulated error")
+
+        class MockWriter:
+            def __init__(self):
+                self.closed = False
+
+            def close(self):
+                self.closed = True
+
+            async def wait_closed(self):
+                pass
+
+        reader = ErrorReader()
+        writer = MockWriter()
+
+        # Should not raise, handles exception internally
+        await handle_client(reader, writer)
+        assert writer.closed
+
+
+class TestFlushExceptionHandling:
+    """Tests for flush exception handlers."""
+
+    @pytest.mark.asyncio
+    async def test_flush_httpx_not_available(self) -> None:
+        """Test flush when httpx import fails (lines 156-157)."""
+        import sys
+        from collectors.shell_watcher import HeartbeatAggregator, ShellHeartbeat
+
+        agg = HeartbeatAggregator()
+        agg.pending.append(ShellHeartbeat(
+            timestamp="2025-12-12T12:00:00",
+            command="test",
+            pwd="/tmp",
+            exit_code=0,
+        ))
+
+        # Temporarily make httpx unavailable
+        original_httpx = sys.modules.get('httpx')
+        sys.modules['httpx'] = None
+
+        # Flush should handle the import error gracefully
+        # Note: This won't actually test the ImportError path since httpx
+        # is already imported at module level. The test just verifies
+        # flush handles errors without crashing.
+        await agg.flush()
+        assert len(agg.pending) == 0
+
+        if original_httpx:
+            sys.modules['httpx'] = original_httpx
+
+
+class TestStartServer:
+    """Tests for Unix socket server."""
+
+    @pytest.mark.asyncio
+    async def test_start_server_creates_socket(self) -> None:
+        """Test start_server creates and starts socket (lines 234-244)."""
+        import asyncio
+        import tempfile
+        from pathlib import Path
+        import collectors.shell_watcher as sw
+
+        # Use a temporary directory
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_dir = sw.SOCKET_DIR
+            original_path = sw.SOCKET_PATH
+            sw.SOCKET_DIR = Path(tmpdir)
+            sw.SOCKET_PATH = Path(tmpdir) / "test.sock"
+
+            try:
+                # Start the server as a task
+                task = asyncio.create_task(sw.start_server())
+
+                # Let it start
+                await asyncio.sleep(0.2)
+
+                # Check socket was created
+                assert sw.SOCKET_PATH.exists()
+
+                # Cancel the server
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+
+            finally:
+                sw.SOCKET_DIR = original_dir
+                sw.SOCKET_PATH = original_path
+
+    @pytest.mark.asyncio
+    async def test_start_server_removes_old_socket(self) -> None:
+        """Test start_server removes existing socket (line 237-238)."""
+        import asyncio
+        import tempfile
+        from pathlib import Path
+        import collectors.shell_watcher as sw
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_dir = sw.SOCKET_DIR
+            original_path = sw.SOCKET_PATH
+            sw.SOCKET_DIR = Path(tmpdir)
+            sw.SOCKET_PATH = Path(tmpdir) / "test.sock"
+
+            try:
+                # Create a fake old socket file
+                sw.SOCKET_PATH.touch()
+                assert sw.SOCKET_PATH.exists()
+
+                # Start server (should remove old socket first)
+                task = asyncio.create_task(sw.start_server())
+                await asyncio.sleep(0.2)
+
+                # Should still exist (recreated as actual socket)
+                assert sw.SOCKET_PATH.exists()
+
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+
+            finally:
+                sw.SOCKET_DIR = original_dir
+                sw.SOCKET_PATH = original_path
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

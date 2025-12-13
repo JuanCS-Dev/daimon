@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div x-data="dashboard()" x-init="init()" x-cloak class="container mx-auto px-4 py-8 max-w-6xl">
+
+        <!-- Header -->
+        <header class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-purple-400">DAIMON Control</h1>
+                <p class="text-gray-400">Exocortex Pessoal - v2.0</p>
+            </div>
+            <div class="text-sm text-gray-500">
+                <span x-text="lastUpdate"></span>
+            </div>
+        </header>
+
+        <!-- Status Cards -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <template x-for="(status, service) in services" :key="service">
+                <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                    <h3 class="text-xs text-gray-400 uppercase tracking-wide" x-text="service"></h3>
+                    <div class="flex items-center mt-2">
+                        <span class="w-2 h-2 rounded-full mr-2"
+                              :class="{
+                                  'bg-green-500': status === 'healthy' || status === 'active',
+                                  'bg-red-500': status === 'offline' || status === 'inactive',
+                                  'bg-yellow-500': status === 'unhealthy'
+                              }">
+                        </span>
+                        <span class="text-sm font-medium" x-text="status"></span>
+                    </div>
+                </div>
+            </template>
+        </section>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- Preferencias Aprendidas -->
+            <section class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Preferencias Aprendidas</h2>
+                    <button @click="triggerReflection()"
+                            :disabled="reflecting"
+                            class="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 px-3 py-1 rounded text-sm transition">
+                        <span x-show="!reflecting">Refletir</span>
+                        <span x-show="reflecting">...</span>
+                    </button>
+                </div>
+
+                <template x-if="Object.keys(preferences.current_preferences || {}).length > 0">
+                    <div class="space-y-3">
+                        <template x-for="(data, category) in preferences.current_preferences" :key="category">
+                            <div class="bg-gray-700/50 rounded p-3">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm font-medium capitalize" x-text="category.replace('_', ' ')"></span>
+                                    <span class="text-xs px-2 py-0.5 rounded"
+                                          :class="{
+                                              'bg-green-500/20 text-green-400': data.trend === 'positive',
+                                              'bg-red-500/20 text-red-400': data.trend === 'negative',
+                                              'bg-yellow-500/20 text-yellow-400': data.trend === 'neutral'
+                                          }"
+                                          x-text="data.trend">
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="flex-1 bg-gray-600 rounded-full h-2">
+                                        <div class="bg-purple-500 h-2 rounded-full transition-all"
+                                             :style="'width: ' + (data.approval_rate * 100) + '%'">
+                                        </div>
+                                    </div>
+                                    <span class="text-xs text-gray-400 w-12 text-right"
+                                          x-text="Math.round(data.approval_rate * 100) + '%'">
+                                    </span>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1" x-text="data.total_signals + ' sinais'"></div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <template x-if="Object.keys(preferences.current_preferences || {}).length === 0">
+                    <p class="text-gray-500 text-sm">Nenhuma preferencia detectada ainda. Clique em "Refletir" para analisar.</p>
+                </template>
+
+                <!-- Stats -->
+                <div class="mt-4 pt-4 border-t border-gray-700 grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-400">Reflexoes:</span>
+                        <span class="ml-2" x-text="preferences.total_reflections || 0"></span>
+                    </div>
+                    <div>
+                        <span class="text-gray-400">Updates:</span>
+                        <span class="ml-2" x-text="preferences.total_updates || 0"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Collectors -->
+            <section class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <h2 class="text-xl font-semibold mb-4">Collectors</h2>
+
+                <div class="space-y-3">
+                    <template x-for="(data, name) in collectors" :key="name">
+                        <div class="bg-gray-700/50 rounded p-3 flex items-center justify-between">
+                            <div>
+                                <span class="font-medium capitalize" x-text="name.replace('_', ' ')"></span>
+                                <div class="flex items-center mt-1">
+                                    <span class="w-2 h-2 rounded-full mr-2"
+                                          :class="data.process_running ? 'bg-green-500' : 'bg-red-500'">
+                                    </span>
+                                    <span class="text-xs text-gray-400"
+                                          x-text="data.process_running ? 'Rodando' : 'Parado'">
+                                    </span>
+                                    <template x-if="data.socket_exists !== undefined">
+                                        <span class="text-xs text-gray-500 ml-2"
+                                              x-text="data.socket_exists ? '(socket ok)' : '(sem socket)'">
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="startCollector(name)"
+                                        :disabled="data.process_running"
+                                        class="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 px-2 py-1 rounded text-xs transition">
+                                    Start
+                                </button>
+                                <button @click="stopCollector(name)"
+                                        :disabled="!data.process_running"
+                                        class="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 px-2 py-1 rounded text-xs transition">
+                                    Stop
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            <!-- CLAUDE.md Editor -->
+            <section class="bg-gray-800 rounded-lg p-6 border border-gray-700 lg:col-span-2">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">~/.claude/CLAUDE.md</h2>
+                    <div class="flex gap-2">
+                        <button @click="loadClaudeMd()"
+                                class="bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded text-sm transition">
+                            Recarregar
+                        </button>
+                        <button @click="saveClaudeMd()"
+                                :disabled="!claudeMdChanged"
+                                class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-3 py-1 rounded text-sm transition">
+                            Salvar
+                        </button>
+                    </div>
+                </div>
+
+                <textarea x-model="claudeMd"
+                          @input="claudeMdChanged = true"
+                          class="w-full h-64 bg-gray-900 border border-gray-700 rounded p-3 font-mono text-sm resize-y focus:outline-none focus:border-purple-500"
+                          placeholder="Carregando...">
+                </textarea>
+
+                <div class="mt-2 flex justify-between items-center text-xs text-gray-500">
+                    <span x-text="claudeMdExists ? 'Arquivo existe' : 'Arquivo sera criado'"></span>
+                    <span x-show="claudeMdChanged" class="text-yellow-500">Alteracoes nao salvas</span>
+                </div>
+            </section>
+
+            <!-- Backups -->
+            <section class="bg-gray-800 rounded-lg p-6 border border-gray-700 lg:col-span-2">
+                <h2 class="text-xl font-semibold mb-4">Backups</h2>
+
+                <template x-if="backups.length > 0">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <template x-for="backup in backups" :key="backup.path">
+                            <div class="bg-gray-700/50 rounded p-3 flex justify-between items-center">
+                                <div>
+                                    <div class="text-sm font-mono" x-text="backup.filename"></div>
+                                    <div class="text-xs text-gray-500" x-text="backup.size_bytes + ' bytes'"></div>
+                                </div>
+                                <button @click="restoreBackup(backup.path)"
+                                        class="bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded text-xs transition">
+                                    Restaurar
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <template x-if="backups.length === 0">
+                    <p class="text-gray-500 text-sm">Nenhum backup disponivel.</p>
+                </template>
+            </section>
+
+            <!-- Corpus de Sabedoria -->
+            <section class="bg-gray-800 rounded-lg p-6 border border-gray-700 lg:col-span-2">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Corpus de Sabedoria</h2>
+                    <div class="flex gap-2">
+                        <button @click="loadCorpus()"
+                                class="bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded text-sm transition">
+                            Recarregar
+                        </button>
+                        <button @click="showCorpusForm = !showCorpusForm"
+                                class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm transition">
+                            + Adicionar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-4 gap-4 mb-4 text-sm">
+                    <div class="bg-gray-700/50 rounded p-2 text-center">
+                        <div class="text-2xl font-bold text-purple-400" x-text="corpusStats.total_texts || 0"></div>
+                        <div class="text-gray-400 text-xs">Textos</div>
+                    </div>
+                    <div class="bg-gray-700/50 rounded p-2 text-center">
+                        <div class="text-2xl font-bold text-blue-400" x-text="corpusStats.total_authors || 0"></div>
+                        <div class="text-gray-400 text-xs">Autores</div>
+                    </div>
+                    <div class="bg-gray-700/50 rounded p-2 text-center">
+                        <div class="text-2xl font-bold text-green-400" x-text="corpusStats.total_themes || 0"></div>
+                        <div class="text-gray-400 text-xs">Temas</div>
+                    </div>
+                    <div class="bg-gray-700/50 rounded p-2 text-center">
+                        <div class="text-2xl font-bold text-yellow-400" x-text="Object.keys(corpusStats.by_category || {}).length"></div>
+                        <div class="text-gray-400 text-xs">Categorias</div>
+                    </div>
+                </div>
+
+                <!-- Add Form (hidden by default) -->
+                <div x-show="showCorpusForm" x-transition class="bg-gray-700/30 rounded p-4 mb-4 border border-gray-600">
+                    <h3 class="font-medium mb-3">Novo Texto</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input x-model="newText.author" placeholder="Autor"
+                               class="bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:border-purple-500 focus:outline-none">
+                        <input x-model="newText.title" placeholder="Titulo"
+                               class="bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:border-purple-500 focus:outline-none">
+                        <select x-model="newText.category"
+                                class="bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:border-purple-500 focus:outline-none">
+                            <option value="">Categoria...</option>
+                            <template x-for="cat in corpusTree.categories" :key="cat">
+                                <option :value="cat" x-text="cat"></option>
+                            </template>
+                        </select>
+                        <input x-model="newText.source" placeholder="Fonte (ex: Livro, Cap. 1)"
+                               class="bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:border-purple-500 focus:outline-none">
+                        <input x-model="newText.themes" placeholder="Temas (virgula separados)"
+                               class="bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:border-purple-500 focus:outline-none col-span-2">
+                        <textarea x-model="newText.content" placeholder="Conteudo do texto..."
+                                  class="bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:border-purple-500 focus:outline-none col-span-2 h-32 resize-y"></textarea>
+                    </div>
+                    <div class="flex justify-end gap-2 mt-3">
+                        <button @click="showCorpusForm = false"
+                                class="bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded text-sm">
+                            Cancelar
+                        </button>
+                        <button @click="addCorpusText()"
+                                class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm">
+                            Salvar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tree View -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <!-- Category Tree -->
+                    <div class="bg-gray-700/30 rounded p-3 max-h-96 overflow-y-auto">
+                        <h3 class="text-sm font-medium text-gray-400 mb-2">Arvore de Categorias</h3>
+                        <template x-for="(catData, catName) in corpusTree.tree" :key="catName">
+                            <div class="mb-2">
+                                <div class="flex items-center text-yellow-400 font-medium">
+                                    <span class="mr-1">📁</span>
+                                    <span x-text="catName"></span>
+                                </div>
+                                <template x-for="(subData, subName) in catData" :key="subName">
+                                    <div x-show="subName !== '_texts'" class="ml-4 mt-1">
+                                        <div class="flex items-center text-blue-400">
+                                            <span class="mr-1">📂</span>
+                                            <span x-text="subName"></span>
+                                            <span class="text-xs text-gray-500 ml-2" x-text="'(' + (subData._texts?.length || 0) + ')'"></span>
+                                        </div>
+                                        <template x-for="text in (subData._texts || [])" :key="text.id">
+                                            <div @click="selectedText = text; loadFullText(text.id)"
+                                                 class="ml-4 py-1 cursor-pointer hover:bg-gray-600/50 rounded px-2 transition">
+                                                <div class="flex items-center text-sm">
+                                                    <span class="mr-1 text-gray-500">📜</span>
+                                                    <span class="text-gray-300" x-text="text.title"></span>
+                                                </div>
+                                                <div class="text-xs text-gray-500 ml-5" x-text="text.author"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                                <!-- Root level texts -->
+                                <template x-for="text in (catData._texts || [])" :key="text.id">
+                                    <div @click="selectedText = text; loadFullText(text.id)"
+                                         class="ml-4 py-1 cursor-pointer hover:bg-gray-600/50 rounded px-2 transition">
+                                        <div class="flex items-center text-sm">
+                                            <span class="mr-1 text-gray-500">📜</span>
+                                            <span class="text-gray-300" x-text="text.title"></span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 ml-5" x-text="text.author"></div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Text Preview -->
+                    <div class="bg-gray-700/30 rounded p-3 max-h-96 overflow-y-auto">
+                        <h3 class="text-sm font-medium text-gray-400 mb-2">Visualizacao</h3>
+                        <template x-if="fullText">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <div class="font-medium text-purple-400" x-text="fullText.title"></div>
+                                        <div class="text-sm text-gray-400" x-text="fullText.author"></div>
+                                    </div>
+                                    <button @click="deleteCorpusText(fullText.id)"
+                                            class="bg-red-600/50 hover:bg-red-600 px-2 py-1 rounded text-xs">
+                                        Remover
+                                    </button>
+                                </div>
+                                <div class="text-xs text-gray-500 mb-2">
+                                    <span x-text="fullText.category"></span>
+                                    <span x-show="fullText.source"> | </span>
+                                    <span x-text="fullText.source"></span>
+                                </div>
+                                <div class="flex flex-wrap gap-1 mb-3">
+                                    <template x-for="theme in (fullText.themes || [])" :key="theme">
+                                        <span class="bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded text-xs" x-text="theme"></span>
+                                    </template>
+                                </div>
+                                <div class="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed border-t border-gray-600 pt-3" x-text="fullText.content"></div>
+                            </div>
+                        </template>
+                        <template x-if="!fullText">
+                            <p class="text-gray-500 text-sm">Selecione um texto na arvore para visualizar.</p>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Search -->
+                <div class="mt-4 pt-4 border-t border-gray-700">
+                    <div class="flex gap-2">
+                        <input x-model="corpusSearch" @keyup.enter="searchCorpus()"
+                               placeholder="Buscar no corpus..."
+                               class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-sm focus:border-purple-500 focus:outline-none">
+                        <button @click="searchCorpus()"
+                                class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded text-sm">
+                            Buscar
+                        </button>
+                    </div>
+                    <template x-if="corpusResults.length > 0">
+                        <div class="mt-3 space-y-2">
+                            <template x-for="result in corpusResults" :key="result.id">
+                                <div @click="loadFullText(result.id)"
+                                     class="bg-gray-700/50 rounded p-2 cursor-pointer hover:bg-gray-600/50 transition">
+                                    <div class="font-medium text-sm" x-text="result.title"></div>
+                                    <div class="text-xs text-gray-400" x-text="result.author + ' - ' + result.category"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-gray-500 text-sm">
+            <p>DAIMON v2.0 - Porta 8003</p>
+        </footer>
+
+    </div>
+
+    <script>
+        function dashboard() {
+            return {
+                // State
+                services: {},
+                preferences: {},
+                collectors: {},
+                claudeMd: '',
+                claudeMdExists: false,
+                claudeMdChanged: false,
+                backups: [],
+                reflecting: false,
+                lastUpdate: '',
+
+                // Corpus state
+                corpusStats: {},
+                corpusTree: { tree: {}, categories: [], authors: [], themes: [] },
+                showCorpusForm: false,
+                newText: { author: '', title: '', category: '', content: '', themes: '', source: '' },
+                selectedText: null,
+                fullText: null,
+                corpusSearch: '',
+                corpusResults: [],
+
+                // Init
+                async init() {
+                    await this.refresh();
+                    await this.loadCorpus();
+                    // Auto-refresh every 10 seconds
+                    setInterval(() => this.refresh(), 10000);
+                },
+
+                // Refresh all data
+                async refresh() {
+                    try {
+                        const [statusRes, prefsRes, collectorsRes, backupsRes] = await Promise.all([
+                            fetch('/api/status'),
+                            fetch('/api/preferences'),
+                            fetch('/api/collectors'),
+                            fetch('/api/backups')
+                        ]);
+
+                        this.services = await statusRes.json();
+                        this.preferences = await prefsRes.json();
+                        this.collectors = await collectorsRes.json();
+                        const backupsData = await backupsRes.json();
+                        this.backups = backupsData.backups || [];
+
+                        // Load CLAUDE.md only if not editing
+                        if (!this.claudeMdChanged) {
+                            await this.loadClaudeMd();
+                        }
+
+                        this.lastUpdate = new Date().toLocaleTimeString();
+                    } catch (e) {
+                        console.error('Refresh failed:', e);
+                    }
+                },
+
+                // Load CLAUDE.md
+                async loadClaudeMd() {
+                    try {
+                        const res = await fetch('/api/claude-md');
+                        const data = await res.json();
+                        this.claudeMd = data.content || '';
+                        this.claudeMdExists = data.exists;
+                        this.claudeMdChanged = false;
+                    } catch (e) {
+                        console.error('Load CLAUDE.md failed:', e);
+                    }
+                },
+
+                // Save CLAUDE.md
+                async saveClaudeMd() {
+                    try {
+                        await fetch('/api/claude-md', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ content: this.claudeMd })
+                        });
+                        this.claudeMdChanged = false;
+                        await this.refresh(); // Refresh backups
+                        alert('Salvo!');
+                    } catch (e) {
+                        alert('Erro ao salvar: ' + e.message);
+                    }
+                },
+
+                // Trigger reflection
+                async triggerReflection() {
+                    this.reflecting = true;
+                    try {
+                        const res = await fetch('/api/reflect', { method: 'POST' });
+                        const data = await res.json();
+                        await this.refresh();
+                        alert(`Reflexao concluida!\n\nSinais: ${data.signals_count}\nInsights: ${data.insights_count}\nAtualizado: ${data.updated}`);
+                    } catch (e) {
+                        alert('Erro: ' + e.message);
+                    }
+                    this.reflecting = false;
+                },
+
+                // Start collector
+                async startCollector(name) {
+                    try {
+                        await fetch(`/api/collectors/${name}/start`, { method: 'POST' });
+                        await new Promise(r => setTimeout(r, 1000)); // Wait for process to start
+                        await this.refresh();
+                    } catch (e) {
+                        alert('Erro: ' + e.message);
+                    }
+                },
+
+                // Stop collector
+                async stopCollector(name) {
+                    try {
+                        await fetch(`/api/collectors/${name}/stop`, { method: 'POST' });
+                        await this.refresh();
+                    } catch (e) {
+                        alert('Erro: ' + e.message);
+                    }
+                },
+
+                // Restore backup
+                async restoreBackup(path) {
+                    if (!confirm('Restaurar este backup? O conteudo atual sera salvo como novo backup.')) {
+                        return;
+                    }
+                    try {
+                        await fetch('/api/backups/restore', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ path })
+                        });
+                        await this.loadClaudeMd();
+                        await this.refresh();
+                        alert('Backup restaurado!');
+                    } catch (e) {
+                        alert('Erro: ' + e.message);
+                    }
+                },
+
+                // === Corpus Methods ===
+
+                // Load corpus data
+                async loadCorpus() {
+                    try {
+                        const [statsRes, treeRes] = await Promise.all([
+                            fetch('/api/corpus/stats'),
+                            fetch('/api/corpus/tree')
+                        ]);
+                        this.corpusStats = await statsRes.json();
+                        this.corpusTree = await treeRes.json();
+                    } catch (e) {
+                        console.error('Load corpus failed:', e);
+                    }
+                },
+
+                // Load full text
+                async loadFullText(textId) {
+                    try {
+                        const res = await fetch(`/api/corpus/text/${textId}`);
+                        this.fullText = await res.json();
+                    } catch (e) {
+                        console.error('Load text failed:', e);
+                    }
+                },
+
+                // Add new corpus text
+                async addCorpusText() {
+                    if (!this.newText.author || !this.newText.title || !this.newText.category || !this.newText.content) {
+                        alert('Preencha todos os campos obrigatorios (autor, titulo, categoria, conteudo)');
+                        return;
+                    }
+
+                    try {
+                        const themes = this.newText.themes
+                            ? this.newText.themes.split(',').map(t => t.trim()).filter(t => t)
+                            : [];
+
+                        const res = await fetch('/api/corpus/text', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                author: this.newText.author,
+                                title: this.newText.title,
+                                category: this.newText.category,
+                                content: this.newText.content,
+                                themes: themes,
+                                source: this.newText.source,
+                                relevance: 0.5
+                            })
+                        });
+
+                        const data = await res.json();
+                        if (data.error) {
+                            alert('Erro: ' + data.error);
+                            return;
+                        }
+
+                        // Reset form
+                        this.newText = { author: '', title: '', category: '', content: '', themes: '', source: '' };
+                        this.showCorpusForm = false;
+
+                        // Reload corpus
+                        await this.loadCorpus();
+                        alert('Texto adicionado!');
+                    } catch (e) {
+                        alert('Erro: ' + e.message);
+                    }
+                },
+
+                // Delete corpus text
+                async deleteCorpusText(textId) {
+                    if (!confirm('Remover este texto do corpus?')) {
+                        return;
+                    }
+
+                    try {
+                        const res = await fetch(`/api/corpus/text/${textId}`, { method: 'DELETE' });
+                        const data = await res.json();
+
+                        if (data.error) {
+                            alert('Erro: ' + data.error);
+                            return;
+                        }
+
+                        this.fullText = null;
+                        await this.loadCorpus();
+                        alert('Texto removido!');
+                    } catch (e) {
+                        alert('Erro: ' + e.message);
+                    }
+                },
+
+                // Search corpus
+                async searchCorpus() {
+                    if (!this.corpusSearch) {
+                        this.corpusResults = [];
+                        return;
+                    }
+
+                    try {
+                        const res = await fetch(`/api/corpus/search?q=${encodeURIComponent(this.corpusSearch)}`);
+                        const data = await res.json();
+                        this.corpusResults = data.results || [];
+                    } catch (e) {
+                        console.error('Search failed:', e);
+                    }
+                }
+            };
+        }
+    </script>
+</body>
+</html>

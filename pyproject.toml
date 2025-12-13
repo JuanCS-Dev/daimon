@@ -15,6 +15,13 @@ dependencies = [
     "httpx>=0.25.0",
     "watchdog>=3.0.0",
     "pydantic>=2.0.0",
+    # Dashboard
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "jinja2>=3.1.0",
+    # OS Observability
+    "python-xlib>=0.33",   # X11 window tracking
+    "pynput>=1.7.6",       # Input capture (keystroke dynamics)
 ]
 
 [project.optional-dependencies]
@@ -30,7 +37,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["collectors*", "integrations*", "endpoints*"]
+include = ["collectors*", "integrations*", "endpoints*", "memory*", "learners*", "actuators*", "corpus*", "dashboard*"]
 
 [tool.ruff]
 line-length = 100
@@ -43,3 +50,25 @@ ignore = ["E501"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["memory", "learners", "actuators", "corpus", "collectors", "endpoints", "dashboard", "integrations"]
+omit = [
+    "*/__main__.py",
+    "corpus/loaders/*",
+    "corpus/semantic_search.py",
+    "daimon_daemon.py",
+    "audit/*",
+    "collectors/input_watcher.py",
+    "collectors/browser_watcher.py",
+    "integrations/mcp_tools/corpus_tools.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "pass",
+]

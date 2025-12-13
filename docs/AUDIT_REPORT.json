@@ -1,0 +1,571 @@
+{
+  "timestamp": "2025-12-12T20:43:55.067355",
+  "results": {
+    "Dashboard API": {
+      "passed": 12,
+      "failed": 0,
+      "tests": [
+        {
+          "test": "GET /api/status",
+          "status": "PASS",
+          "details": "Services: ['noesis', 'reflector', 'shell_watcher', 'dashboard']"
+        },
+        {
+          "test": "GET /api/preferences",
+          "status": "PASS",
+          "details": "7 categories detected"
+        },
+        {
+          "test": "POST /api/reflect",
+          "status": "PASS",
+          "details": "Signals: 52"
+        },
+        {
+          "test": "GET /api/claude-md",
+          "status": "PASS",
+          "details": "exists=True, len=329"
+        },
+        {
+          "test": "GET /api/collectors",
+          "status": "PASS",
+          "details": "shell_socket=True, claude_running=False"
+        },
+        {
+          "test": "GET /api/backups",
+          "status": "PASS",
+          "details": "0 backups"
+        },
+        {
+          "test": "GET /api/corpus/stats",
+          "status": "PASS",
+          "details": "10 texts"
+        },
+        {
+          "test": "GET /api/corpus/tree",
+          "status": "PASS",
+          "details": "8 categories"
+        },
+        {
+          "test": "GET /api/corpus/search",
+          "status": "PASS",
+          "details": "2 results for 'virtue'"
+        },
+        {
+          "test": "GET /api/memory/stats",
+          "status": "PASS",
+          "details": "1 memories"
+        },
+        {
+          "test": "GET /api/precedents/stats",
+          "status": "PASS",
+          "details": "0 precedents"
+        },
+        {
+          "test": "POST/DELETE /api/corpus/text",
+          "status": "PASS",
+          "details": "CRUD works"
+        }
+      ]
+    },
+    "NOESIS API": {
+      "passed": 3,
+      "failed": 0,
+      "tests": [
+        {
+          "test": "GET /v1/health",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "GET /api/consciousness/state",
+          "status": "PASS",
+          "details": "coherence=N/A"
+        },
+        {
+          "test": "POST /api/consciousness/quick-check",
+          "status": "PASS",
+          "details": "salience=0.9"
+        }
+      ]
+    },
+    "Reflector API": {
+      "passed": 2,
+      "failed": 0,
+      "tests": [
+        {
+          "test": "GET /health",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "POST /reflect/verdict",
+          "status": "PASS",
+          "details": "verdict={'decision': 'fail', 'consensus_score': 0.27999999999999997, 'individual_verdicts': {'VERITAS': {'pillar': 'Truth', 'passed': True, 'confidence': 0.7, 'reasoning': 'No verifiable claims found in execution.', 'suggestions': []}, 'SOPHIA': {'pillar': 'Wisdom', 'passed': False, 'confidence': 0.7465, 'reasoning': 'Wisdom check failed (score: 0.48). Issues: lacks reasoning depth; did not leverage available knowledge.', 'suggestions': [\"Deepen reasoning with 'because', 'therefore', evidence-based claims.\", 'Consult episodic/semantic memory for relevant precedents.']}, 'DIK\u0112': {'pillar': 'Justice', 'passed': False, 'confidence': 0.92, 'reasoning': 'Justice check failed: Role: Unknown role: unknown', 'suggestions': ['Action should be performed by appropriate role.']}}, 'vote_breakdown': [{'judge_name': 'VERITAS', 'pillar': 'Truth', 'vote': 0.7, 'weight': 0.4, 'weighted_vote': 0.27999999999999997, 'abstained': False}, {'judge_name': 'SOPHIA', 'pillar': 'Wisdom', 'vote': 0.0, 'weight': 0.3, 'weighted_vote': 0.0, 'abstained': False}, {'judge_name': 'DIK\u0112', 'pillar': 'Justice', 'vote': 0.0, 'weight': 0.3, 'weighted_vote': 0.0, 'abstained': False}], 'reasoning': 'Tribunal FAILS execution. Votes: VERITAS: 0.70, SOPHIA: 0.00, DIK\u0112: 0.00. Crimes: CONTEXT_BLINDNESS (MISDEMEANOR), ROLE_OVERREACH (MISDEMEANOR). Issues: Wisdom check failed (score: 0.48). Issues: lacks reasoning depth; did not leverage available knowled; Justice check failed: Role: Unknown role: unknown', 'offense_level': 'major', 'requires_human_review': False, 'punishment_recommendation': 'LOCKDOWN_SANDBOX', 'abstention_count': 0, 'execution_time_ms': 0.5550384521484375}"
+        }
+      ]
+    },
+    "Collectors": {
+      "passed": 3,
+      "failed": 0,
+      "tests": [
+        {
+          "test": "Shell Watcher Socket",
+          "status": "PASS",
+          "details": "Listening at /home/juan/.daimon/daimon.sock"
+        },
+        {
+          "test": "Claude Watcher run() method",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "Shell hooks in .zshrc",
+          "status": "PASS",
+          "details": ""
+        }
+      ]
+    },
+    "Memory": {
+      "passed": 7,
+      "failed": 0,
+      "tests": [
+        {
+          "test": "MemoryStore.add()",
+          "status": "PASS",
+          "details": "ID: 51436f7709a59b0e"
+        },
+        {
+          "test": "MemoryStore.search()",
+          "status": "PASS",
+          "details": "1 results"
+        },
+        {
+          "test": "MemoryStore.delete()",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "MemoryStore.get_stats()",
+          "status": "PASS",
+          "details": "DB: /home/juan/.daimon/memory/memories.db"
+        },
+        {
+          "test": "PrecedentSystem.record()",
+          "status": "PASS",
+          "details": "ID: e4013f3c7c5e8017"
+        },
+        {
+          "test": "PrecedentSystem.search()",
+          "status": "PASS",
+          "details": "1 results"
+        },
+        {
+          "test": "PrecedentSystem.delete()",
+          "status": "PASS",
+          "details": ""
+        }
+      ]
+    },
+    "Learners": {
+      "passed": 6,
+      "failed": 0,
+      "tests": [
+        {
+          "test": "PreferenceLearner.scan_sessions()",
+          "status": "PASS",
+          "details": "52 signals"
+        },
+        {
+          "test": "PreferenceLearner.get_preference_summary()",
+          "status": "PASS",
+          "details": "7 categories"
+        },
+        {
+          "test": "PreferenceLearner.get_actionable_insights()",
+          "status": "PASS",
+          "details": "2 insights"
+        },
+        {
+          "test": "ReflectionEngine.get_status()",
+          "status": "PASS",
+          "details": "running=False"
+        },
+        {
+          "test": "ReflectionEngine.get_learner()",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "ReflectionEngine.get_refiner()",
+          "status": "PASS",
+          "details": ""
+        }
+      ]
+    },
+    "Actuators": {
+      "passed": 4,
+      "failed": 0,
+      "tests": [
+        {
+          "test": "ConfigRefiner.get_current_preferences()",
+          "status": "PASS",
+          "details": "329 chars"
+        },
+        {
+          "test": "ConfigRefiner.get_manual_content()",
+          "status": "PASS",
+          "details": "0 chars"
+        },
+        {
+          "test": "ConfigRefiner.get_backup_list()",
+          "status": "PASS",
+          "details": "0 backups"
+        },
+        {
+          "test": "ConfigRefiner.update_preferences() exists",
+          "status": "PASS",
+          "details": ""
+        }
+      ]
+    },
+    "Corpus": {
+      "passed": 8,
+      "failed": 0,
+      "tests": [
+        {
+          "test": "CorpusManager.get_stats()",
+          "status": "PASS",
+          "details": "10 texts"
+        },
+        {
+          "test": "CorpusManager.list_authors()",
+          "status": "PASS",
+          "details": "13 authors"
+        },
+        {
+          "test": "CorpusManager.list_themes()",
+          "status": "PASS",
+          "details": "35 themes"
+        },
+        {
+          "test": "CorpusManager.search()",
+          "status": "PASS",
+          "details": "2 results"
+        },
+        {
+          "test": "CorpusManager.add_text()",
+          "status": "PASS",
+          "details": "ID: audit_test"
+        },
+        {
+          "test": "CorpusManager.get_text()",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "CorpusManager.delete_text()",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "Bootstrap texts available",
+          "status": "PASS",
+          "details": "10 texts"
+        }
+      ]
+    },
+    "Hooks": {
+      "passed": 6,
+      "failed": 0,
+      "tests": [
+        {
+          "test": "noesis_hook.py exists",
+          "status": "PASS",
+          "details": "/media/juan/DATA/projetos/daimon/.claude/hooks/noesis_hook.py"
+        },
+        {
+          "test": "UserPromptSubmit hook configured",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "PreToolUse hook configured",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "noesis-sage.md exists",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "Hook installed in ~/.claude",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "Agent installed in ~/.claude",
+          "status": "PASS",
+          "details": ""
+        }
+      ]
+    },
+    "MCP Server": {
+      "passed": 5,
+      "failed": 0,
+      "tests": [
+        {
+          "test": "Tool: noesis_consult",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "Tool: noesis_tribunal",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "Tool: noesis_precedent",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "Tool: noesis_confront",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "Tool: noesis_health",
+          "status": "PASS",
+          "details": ""
+        }
+      ]
+    },
+    "Files": {
+      "passed": 21,
+      "failed": 0,
+      "tests": [
+        {
+          "test": "daimon_daemon.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "install.sh",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "integrations/mcp_server.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "collectors/shell_watcher.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "collectors/claude_watcher.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "endpoints/daimon_routes.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "endpoints/quick_check.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "endpoints/constants.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "memory/optimized_store.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "memory/precedent_system.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "memory/precedent_models.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "learners/preference_learner.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "learners/reflection_engine.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "actuators/config_refiner.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "corpus/manager.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "corpus/bootstrap_texts.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "dashboard/app.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "dashboard/templates/index.html",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": ".claude/hooks/noesis_hook.py",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": ".claude/agents/noesis-sage.md",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": ".claude/settings.json",
+          "status": "PASS",
+          "details": ""
+        }
+      ]
+    },
+    "Directories": {
+      "passed": 6,
+      "failed": 0,
+      "tests": [
+        {
+          "test": "/home/juan/.daimon",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "/home/juan/.daimon/logs",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "/home/juan/.daimon/memory",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "/home/juan/.daimon/corpus",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "/home/juan/.claude",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "/home/juan/.claude/backups",
+          "status": "PASS",
+          "details": ""
+        }
+      ]
+    },
+    "Integration": {
+      "passed": 4,
+      "failed": 0,
+      "tests": [
+        {
+          "test": "Engine->Learner->scan()",
+          "status": "PASS",
+          "details": "42 signals"
+        },
+        {
+          "test": "Engine->Refiner chain",
+          "status": "PASS",
+          "details": "Refiner active, 0 backups"
+        },
+        {
+          "test": "Memory+Corpus search APIs",
+          "status": "PASS",
+          "details": "Memory:1, Corpus:2"
+        },
+        {
+          "test": "Daemon components",
+          "status": "PASS",
+          "details": "SessionTracker.run()=True, HeartbeatAggregator.add()=True"
+        }
+      ]
+    },
+    "Performance": {
+      "passed": 4,
+      "failed": 0,
+      "tests": [
+        {
+          "test": "MemoryStore search <10ms",
+          "status": "PASS",
+          "details": "0.32ms"
+        },
+        {
+          "test": "Corpus search <50ms",
+          "status": "PASS",
+          "details": "0.02ms"
+        },
+        {
+          "test": "Precedent search <20ms",
+          "status": "PASS",
+          "details": "0.25ms"
+        },
+        {
+          "test": "Engine status <5ms",
+          "status": "PASS",
+          "details": "0.03ms"
+        }
+      ]
+    },
+    "Edge Cases": {
+      "passed": 4,
+      "failed": 0,
+      "tests": [
+        {
+          "test": "Empty search query",
+          "status": "PASS",
+          "details": "0 results"
+        },
+        {
+          "test": "Unicode handling",
+          "status": "PASS",
+          "details": "1 results for unicode query"
+        },
+        {
+          "test": "Large text handling (10KB)",
+          "status": "PASS",
+          "details": ""
+        },
+        {
+          "test": "SQL injection protection",
+          "status": "PASS",
+          "details": "Query handled safely"
+        }
+      ]
+    }
+  },
+  "total_failures": 0
+}
