@@ -212,9 +212,68 @@ async def record_session_end(request: SessionEndRequest) -> SessionEndResponse:
     )
 
 
+def _feed_verdict_to_learner(verdict: Dict[str, Any], request: SessionEndRequest) -> None:
+    """
+    AIR GAP #3 FIX: Feed Tribunal verdict back to PreferenceLearner.
+
+    Creates a preference signal based on the verdict to close the feedback loop.
+
+    Args:
+        verdict: Verdict dict from NOESIS Tribunal
+        request: Original session end request
+    """
+    try:
+        from learners.preference_learner import PreferenceSignal
+        from learners import get_engine
+        from datetime import datetime
+
+        engine = get_engine()
+        learner = engine.learner
+
+        # Extract verdict details
+        verdict_result = verdict.get("verdict", "unknown")
+        confidence = verdict.get("confidence", 0.5)
+        reasoning = verdict.get("reasoning", "")
+
+        # Map verdict to signal type
+        if verdict_result in ("approved", "accept", "success"):
+            signal_type = "approval"
+            category = "session_quality"
+        elif verdict_result in ("rejected", "deny", "failure"):
+            signal_type = "rejection"
+            category = "session_quality"
+        else:
+            # Skip neutral verdicts
+            return
+
+        # Create signal with correct PreferenceSignal fields
+        signal = PreferenceSignal(
+            timestamp=datetime.now().isoformat(),
+            signal_type=signal_type,
+            context=f"Tribunal verdict: {reasoning[:200]}",
+            category=category,
+            strength=min(confidence, 1.0),
+            session_id=request.session_id,
+            tool_involved=None,
+        )
+
+        # Add signal to learner and update counts
+        learner.signals.append(signal)
+        learner._update_counts(signal)  # pylint: disable=protected-access
+
+        logger.debug("Fed Tribunal verdict to PreferenceLearner: %s", signal_type)
+
+    except ImportError:
+        logger.debug("PreferenceLearner not available for verdict feedback")
+    except Exception as e:  # pylint: disable=broad-except
+        logger.debug("Failed to feed verdict to learner: %s", e)
+
+
 async def _create_real_precedent(request: SessionEndRequest) -> Optional[str]:
     """
     Create real precedent via NOESIS Tribunal integration.
+
+    Falls back to local PrecedentSystem if NOESIS unavailable.
 
     Args:
         request: Session end request data.
@@ -227,6 +286,7 @@ async def _create_real_precedent(request: SessionEndRequest) -> Optional[str]:
 
     noesis_url = os.getenv("NOESIS_REFLECTOR_URL", "http://localhost:8002")
 
+    # Try NOESIS first
     try:
         import httpx  # pylint: disable=import-outside-toplevel
 
@@ -248,14 +308,44 @@ async def _create_real_precedent(request: SessionEndRequest) -> Optional[str]:
                 result = response.json()
                 precedent_id = result.get("precedent_id") or f"sess_{request.session_id[:8]}"
                 logger.info("DAIMON: Created real precedent %s via NOESIS", precedent_id)
+
+                # AIR GAP #3 FIX: Feed Tribunal verdict back to PreferenceLearner
+                _feed_verdict_to_learner(result, request)
+
                 return precedent_id
     except ImportError:
         logger.debug("httpx not available for NOESIS integration")
     except Exception as e:  # pylint: disable=broad-except
         logger.warning("NOESIS precedent creation failed: %s", e)
 
-    # Fallback: generate local ID if NOESIS unavailable
-    return f"local_{request.session_id[:8]}"
+    # AIR GAP #2 FIX: Store locally in PrecedentSystem when NOESIS unavailable
+    try:
+        from memory.precedent_system import PrecedentSystem
+        from memory.precedent_models import PrecedentMeta
+
+        system = PrecedentSystem()
+        outcome_map = {"success": "success", "failure": "failure", "partial": "partial"}
+        outcome = outcome_map.get(request.outcome, "unknown")
+
+        meta = PrecedentMeta(
+            tags=["session", "daimon"],
+            relevance=0.6 if request.files_changed >= 10 else 0.5,
+        )
+
+        precedent_id = system.record(
+            context=f"Session {request.session_id[:8]}: {request.summary[:200]}",
+            decision=f"Changed {request.files_changed} files in {request.duration_minutes}min",
+            outcome=outcome,
+            meta=meta,
+        )
+        logger.info("DAIMON: Created local precedent %s", precedent_id)
+        return precedent_id
+    except ImportError:
+        logger.debug("PrecedentSystem not available")
+    except Exception as e:  # pylint: disable=broad-except
+        logger.warning("Local precedent creation failed: %s", e)
+
+    return None
 
 
 @router.get("/preferences/learned", response_model=PreferencesResponse)

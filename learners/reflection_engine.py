@@ -28,6 +28,7 @@ from typing import Optional, TYPE_CHECKING
 from .preference_learner import PreferenceLearner, PreferenceSignal
 from .style_learner import get_style_learner
 from .metacognitive_engine import get_metacognitive_engine
+from .keystroke_analyzer import get_keystroke_analyzer
 
 # Importar ConfigRefiner com tratamento de erro
 # Usar import absoluto para funcionar tanto como modulo quanto standalone
@@ -95,10 +96,11 @@ class ReflectionEngine:  # pylint: disable=too-many-instance-attributes
         self.refiner = _config_refiner_class() if _config_refiner_class else None
         self.running = False
         self._task: Optional[asyncio.Task[None]] = None
-        # Notification debounce (consolidate within 30s window)
+        # Notification batching: 1 notification per N insights
         self._last_notification: Optional[datetime] = None
         self._pending_categories: set[str] = set()
-        self._notification_debounce_seconds = 30
+        self._pending_insights_count: int = 0
+        self._notification_threshold: int = 10  # Notify every 10 insights
 
     async def start(self) -> None:
         """Inicia loop de reflexao assincirono."""
@@ -196,6 +198,9 @@ class ReflectionEngine:  # pylint: disable=too-many-instance-attributes
         start_time = datetime.now()
         logger.info("Starting reflection at %s", start_time.isoformat())
 
+        # AIR GAP #5: Apply metacognitive suggestions before reflection
+        await self._apply_metacognitive_adjustments()
+
         # Limpar estado anterior
         self.learner.clear()
 
@@ -209,6 +214,10 @@ class ReflectionEngine:  # pylint: disable=too-many-instance-attributes
         # Adicionar insights do StyleLearner
         style_insights = self._get_style_insights()
         insights.extend(style_insights)
+
+        # AIR GAP #4: Add KeystrokeAnalyzer cognitive insights
+        cognitive_insights = self._get_cognitive_insights()
+        insights.extend(cognitive_insights)
 
         logger.info("Generated %d actionable insights", len(insights))
 
@@ -263,6 +272,116 @@ class ReflectionEngine:  # pylint: disable=too-many-instance-attributes
             logger.warning("Failed to get style insights: %s", e)
             return []
 
+    def _get_cognitive_insights(self) -> list[dict]:
+        """
+        AIR GAP #4: Get insights from KeystrokeAnalyzer cognitive state.
+
+        Detects patterns like fatigue, stress, flow states and generates
+        appropriate suggestions for Claude behavior.
+
+        Returns:
+            List of insight dicts compatible with ConfigRefiner.
+        """
+        try:
+            analyzer = get_keystroke_analyzer()
+            state = analyzer.detect_cognitive_state()
+
+            # Only generate insights if we have enough confidence
+            if state.confidence < 0.5:
+                return []
+
+            insights = []
+
+            # Generate suggestions based on detected cognitive state
+            if state.state == "fatigued":
+                insights.append({
+                    "category": "workflow",
+                    "action": "add",
+                    "confidence": state.confidence,
+                    "suggestion": "User shows fatigue patterns - prefer concise responses and suggest breaks",
+                })
+            elif state.state == "stressed":
+                insights.append({
+                    "category": "workflow",
+                    "action": "add",
+                    "confidence": state.confidence,
+                    "suggestion": "User shows stress patterns - be calming and avoid adding complexity",
+                })
+            elif state.state == "flow":
+                insights.append({
+                    "category": "workflow",
+                    "action": "add",
+                    "confidence": state.confidence,
+                    "suggestion": "User in flow state - minimize interruptions, be direct and efficient",
+                })
+            elif state.state == "distracted":
+                insights.append({
+                    "category": "workflow",
+                    "action": "add",
+                    "confidence": state.confidence,
+                    "suggestion": "User shows distraction patterns - help focus with clear structure",
+                })
+
+            return insights
+
+        except (ValueError, AttributeError, TypeError, KeyError) as e:
+            logger.debug("Failed to get cognitive insights: %s", e)
+            return []
+
+    async def _apply_metacognitive_adjustments(self) -> None:
+        """
+        AIR GAP #5: Apply suggestions from MetacognitiveEngine.
+
+        Reads effectiveness analysis and adjusts reflection parameters
+        based on what's working and what isn't.
+        """
+        try:
+            metacog = get_metacognitive_engine()
+            analysis = metacog.analyze_effectiveness()
+
+            if not analysis.adjustment_suggestions:
+                return
+
+            adjustments_applied = []
+
+            for key, suggestion in analysis.adjustment_suggestions.items():
+                if key == "scan_frequency" and "suggested" in suggestion:
+                    # Adjust scan interval
+                    new_interval = suggestion.get("suggested_minutes")
+                    if new_interval and isinstance(new_interval, (int, float)):
+                        old_interval = self.config.interval_minutes
+                        self.config.interval_minutes = int(new_interval)
+                        adjustments_applied.append(
+                            f"scan_interval: {old_interval}min -> {new_interval}min"
+                        )
+
+                elif key == "confidence_threshold" and "suggested" in suggestion:
+                    # Log but don't auto-apply confidence threshold
+                    # (requires human review)
+                    logger.info(
+                        "Metacognitive suggests confidence_threshold: %s",
+                        suggestion.get("suggested")
+                    )
+
+                elif key == "scan_hours" and "suggested" in suggestion:
+                    # Adjust scan window
+                    new_hours = suggestion.get("suggested")
+                    if new_hours and isinstance(new_hours, (int, float)):
+                        old_hours = self.config.scan_hours
+                        self.config.scan_hours = int(new_hours)
+                        adjustments_applied.append(
+                            f"scan_hours: {old_hours}h -> {new_hours}h"
+                        )
+
+            if adjustments_applied:
+                logger.info(
+                    "Applied metacognitive adjustments: %s",
+                    ", ".join(adjustments_applied)
+                )
+
+        except (ValueError, TypeError, ImportError, AttributeError) as e:
+            logger.debug("Failed to apply metacognitive adjustments: %s", e)
+
     async def _apply_insights(self, insights: list[dict], force_timestamp: bool = False) -> bool:
         """Apply insights to CLAUDE.md if refiner available."""
         if not insights:
@@ -296,35 +415,37 @@ class ReflectionEngine:  # pylint: disable=too-many-instance-attributes
 
     async def _notify_update(self, insights: list[dict]) -> None:
         """
-        Notifica usuario sobre atualizacao com debounce.
+        Notifica usuario sobre atualizacao com batching por quantidade.
 
-        Consolida multiplas notificacoes em uma janela de 30s.
+        Agrupa notificacoes: 1 notificacao a cada N insights (default: 10).
         Usa notify-send no Linux se disponivel.
         """
-        # Acumular categorias
+        # Acumular categorias e contar insights
         for insight in insights:
             self._pending_categories.add(insight.get("category", "general"))
+            self._pending_insights_count += 1
 
-        now = datetime.now()
-
-        # Debounce: se notificou recentemente, apenas acumula
-        if self._last_notification:
-            elapsed = (now - self._last_notification).total_seconds()
-            if elapsed < self._notification_debounce_seconds:
-                logger.debug("Notification debounced, %d categories pending", len(self._pending_categories))
-                return
+        # Batching: so notifica a cada N insights
+        if self._pending_insights_count < self._notification_threshold:
+            logger.debug(
+                "Notification batched: %d/%d insights pending",
+                self._pending_insights_count,
+                self._notification_threshold
+            )
+            return
 
         # Enviar notificacao consolidada
         if not self._pending_categories:
             return
 
         categories_str = ", ".join(sorted(self._pending_categories))
-        count = len(self._pending_categories)
-        message = f"Atualizou {count} categoria(s): {categories_str}"
+        cat_count = len(self._pending_categories)
+        message = f"DAIMON aplicou {self._pending_insights_count} insights em {cat_count} categoria(s): {categories_str}"
 
         # Limpar pendentes e atualizar timestamp
         self._pending_categories.clear()
-        self._last_notification = now
+        self._pending_insights_count = 0
+        self._last_notification = datetime.now()
 
         # Desktop notification (Linux)
         try:

@@ -190,7 +190,9 @@ class TestReflect:
     @pytest.mark.asyncio
     async def test_reflect_clears_learner(self, engine: ReflectionEngine) -> None:
         """Test that reflection clears learner state."""
-        engine.learner.category_counts["testing"]["approvals"] = 5
+        # Access categorizer via the new modular API
+        engine.learner.categorizer.category_stats["testing"] = MagicMock()
+        engine.learner.categorizer.category_stats["testing"].approvals = 5
         await engine.reflect()
         # Counts are cleared during scan
         # After scan they may have new values
@@ -378,10 +380,31 @@ class TestNotifyUpdate:
     async def test_notify_update_handles_errors(self) -> None:
         """Test notify_update handles errors gracefully."""
         engine = ReflectionEngine()
-        insights = [{"category": "testing"}]
+        # Need 10 insights to trigger notification
+        insights = [{"category": "testing"}] * 10
 
         # Should not raise even if notify-send not available
         await engine._notify_update(insights)
+
+    @pytest.mark.asyncio
+    async def test_notify_batches_until_threshold(self) -> None:
+        """Test that notifications are batched until threshold (10) is reached."""
+        engine = ReflectionEngine()
+
+        # Send 5 insights - should NOT trigger notification yet
+        insights = [{"category": "testing"}] * 5
+        await engine._notify_update(insights)
+
+        # Should have accumulated 5 pending
+        assert engine._pending_insights_count == 5
+        assert "testing" in engine._pending_categories
+
+        # Send 5 more - should trigger notification (total = 10)
+        await engine._notify_update(insights)
+
+        # After notification, counters should reset
+        assert engine._pending_insights_count == 0
+        assert len(engine._pending_categories) == 0
 
 
 class TestCheckTriggers:

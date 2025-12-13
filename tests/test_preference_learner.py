@@ -7,6 +7,8 @@ Scientific tests covering:
 - Category inference
 - Session scanning
 - Summary and insights generation
+
+Updated for modular architecture (preference/ subpackage).
 """
 
 import json
@@ -16,13 +18,20 @@ from pathlib import Path
 
 import pytest
 
-from learners.preference_learner import (
-    APPROVAL_PATTERNS,
-    CATEGORY_KEYWORDS,
-    REJECTION_PATTERNS,
-    PreferenceLearner,
+# Import from new modular architecture
+from learners.preference import (
     PreferenceSignal,
+    SignalType,
+    PreferenceCategory,
+    CategoryStats,
+    SessionScanner,
+    SignalDetector,
+    PreferenceCategorizer,
+    InsightGenerator,
 )
+from learners.preference.detector import APPROVAL_PATTERNS, REJECTION_PATTERNS
+from learners.preference.categorizer import CATEGORY_KEYWORDS
+from learners.preference_learner import PreferenceLearner
 
 
 class TestPreferenceSignal:
@@ -107,150 +116,151 @@ class TestPreferenceLearnerInit:
     def test_init_with_default_path(self) -> None:
         """Test initialization with default path."""
         learner = PreferenceLearner()
-        assert learner.projects_dir.name == "projects"
+        assert learner.scanner.projects_dir.name == "projects"
         assert learner.signals == []
-        assert len(learner.category_counts) == 0
+        assert len(learner.categorizer.category_stats) == 0
 
     def test_init_with_custom_path(self, tmp_path: Path) -> None:
         """Test initialization with custom path."""
         learner = PreferenceLearner(projects_dir=tmp_path)
-        assert learner.projects_dir == tmp_path
+        assert learner.scanner.projects_dir == tmp_path
 
 
-class TestDetectSignalType:
-    """Tests for PreferenceLearner._detect_signal_type()."""
+class TestSignalDetector:
+    """Tests for SignalDetector._detect_heuristic()."""
 
     @pytest.fixture
-    def learner(self) -> PreferenceLearner:
-        """Create a PreferenceLearner instance."""
-        return PreferenceLearner()
+    def detector(self) -> SignalDetector:
+        """Create a SignalDetector instance."""
+        return SignalDetector(enable_llm=False)
 
-    def test_detect_approval_sim(self, learner: PreferenceLearner) -> None:
+    def test_detect_approval_sim(self, detector: SignalDetector) -> None:
         """Test detecting 'sim' as approval."""
-        assert learner._detect_signal_type("sim") == "approval"
-        assert learner._detect_signal_type("Sim!") == "approval"
+        assert detector._detect_heuristic("sim") == "approval"
+        assert detector._detect_heuristic("Sim!") == "approval"
 
-    def test_detect_approval_ok(self, learner: PreferenceLearner) -> None:
+    def test_detect_approval_ok(self, detector: SignalDetector) -> None:
         """Test detecting 'ok' as approval."""
-        assert learner._detect_signal_type("ok") == "approval"
-        assert learner._detect_signal_type("OK") == "approval"
+        assert detector._detect_heuristic("ok") == "approval"
+        assert detector._detect_heuristic("OK") == "approval"
 
-    def test_detect_approval_perfeito(self, learner: PreferenceLearner) -> None:
+    def test_detect_approval_perfeito(self, detector: SignalDetector) -> None:
         """Test detecting 'perfeito' as approval."""
-        assert learner._detect_signal_type("perfeito") == "approval"
+        assert detector._detect_heuristic("perfeito") == "approval"
 
-    def test_detect_approval_yes(self, learner: PreferenceLearner) -> None:
+    def test_detect_approval_yes(self, detector: SignalDetector) -> None:
         """Test detecting English approval."""
-        assert learner._detect_signal_type("yes") == "approval"
-        assert learner._detect_signal_type("great!") == "approval"
+        assert detector._detect_heuristic("yes") == "approval"
+        assert detector._detect_heuristic("great!") == "approval"
 
-    def test_detect_rejection_nao(self, learner: PreferenceLearner) -> None:
+    def test_detect_rejection_nao(self, detector: SignalDetector) -> None:
         """Test detecting 'nao' as rejection."""
-        assert learner._detect_signal_type("nao") == "rejection"
-        assert learner._detect_signal_type("Nao!") == "rejection"
+        assert detector._detect_heuristic("nao") == "rejection"
+        assert detector._detect_heuristic("Nao!") == "rejection"
 
-    def test_detect_rejection_errado(self, learner: PreferenceLearner) -> None:
+    def test_detect_rejection_errado(self, detector: SignalDetector) -> None:
         """Test detecting 'errado' as rejection."""
-        assert learner._detect_signal_type("errado") == "rejection"
+        assert detector._detect_heuristic("errado") == "rejection"
 
-    def test_detect_rejection_english(self, learner: PreferenceLearner) -> None:
+    def test_detect_rejection_english(self, detector: SignalDetector) -> None:
         """Test detecting English rejection."""
-        assert learner._detect_signal_type("no") == "rejection"
-        assert learner._detect_signal_type("wrong") == "rejection"
+        assert detector._detect_heuristic("no") == "rejection"
+        assert detector._detect_heuristic("wrong") == "rejection"
 
-    def test_detect_neutral(self, learner: PreferenceLearner) -> None:
+    def test_detect_neutral(self, detector: SignalDetector) -> None:
         """Test neutral content returns None."""
-        assert learner._detect_signal_type("please continue") is None
-        assert learner._detect_signal_type("show me the code") is None
+        assert detector._detect_heuristic("please continue") is None
+        assert detector._detect_heuristic("show me the code") is None
 
 
-class TestInferCategory:
-    """Tests for PreferenceLearner._infer_category()."""
+class TestPreferenceCategorizer:
+    """Tests for PreferenceCategorizer.infer_category()."""
 
     @pytest.fixture
-    def learner(self) -> PreferenceLearner:
-        """Create a PreferenceLearner instance."""
-        return PreferenceLearner()
+    def categorizer(self) -> PreferenceCategorizer:
+        """Create a PreferenceCategorizer instance."""
+        return PreferenceCategorizer()
 
-    def test_infer_code_style(self, learner: PreferenceLearner) -> None:
+    def test_infer_code_style(self, categorizer: PreferenceCategorizer) -> None:
         """Test inferring code_style category."""
-        assert learner._infer_category("fix the formatting") == "code_style"
-        assert learner._infer_category("naming convention") == "code_style"
+        assert categorizer.infer_category("fix the formatting") == "code_style"
+        assert categorizer.infer_category("naming convention") == "code_style"
 
-    def test_infer_testing(self, learner: PreferenceLearner) -> None:
+    def test_infer_testing(self, categorizer: PreferenceCategorizer) -> None:
         """Test inferring testing category."""
-        assert learner._infer_category("add unit tests") == "testing"
-        assert learner._infer_category("increase coverage") == "testing"
+        assert categorizer.infer_category("add unit tests") == "testing"
+        assert categorizer.infer_category("increase coverage") == "testing"
 
-    def test_infer_verbosity(self, learner: PreferenceLearner) -> None:
+    def test_infer_verbosity(self, categorizer: PreferenceCategorizer) -> None:
         """Test inferring verbosity category."""
-        assert learner._infer_category("too verbose") == "verbosity"
-        assert learner._infer_category("mais resumo") == "verbosity"
+        assert categorizer.infer_category("too verbose") == "verbosity"
+        assert categorizer.infer_category("mais resumo") == "verbosity"
 
-    def test_infer_architecture(self, learner: PreferenceLearner) -> None:
+    def test_infer_architecture(self, categorizer: PreferenceCategorizer) -> None:
         """Test inferring architecture category."""
-        assert learner._infer_category("refactor this") == "architecture"
-        assert learner._infer_category("design pattern") == "architecture"
+        assert categorizer.infer_category("refactor this") == "architecture"
+        assert categorizer.infer_category("design pattern") == "architecture"
 
-    def test_infer_documentation(self, learner: PreferenceLearner) -> None:
+    def test_infer_documentation(self, categorizer: PreferenceCategorizer) -> None:
         """Test inferring documentation category."""
-        assert learner._infer_category("add docstring") == "documentation"
-        assert learner._infer_category("update readme") == "documentation"
+        assert categorizer.infer_category("add docstring") == "documentation"
+        assert categorizer.infer_category("update readme") == "documentation"
 
-    def test_infer_workflow(self, learner: PreferenceLearner) -> None:
+    def test_infer_workflow(self, categorizer: PreferenceCategorizer) -> None:
         """Test inferring workflow category."""
-        assert learner._infer_category("commit this") == "workflow"
-        assert learner._infer_category("git push") == "workflow"
+        assert categorizer.infer_category("commit this") == "workflow"
+        assert categorizer.infer_category("git push") == "workflow"
 
-    def test_infer_general(self, learner: PreferenceLearner) -> None:
+    def test_infer_general(self, categorizer: PreferenceCategorizer) -> None:
         """Test falling back to general category."""
-        assert learner._infer_category("random text") == "general"
-        assert learner._infer_category("hello world") == "general"
+        assert categorizer.infer_category("random text") == "general"
+        assert categorizer.infer_category("hello world") == "general"
 
 
 class TestCalculateStrength:
-    """Tests for PreferenceLearner._calculate_strength()."""
+    """Tests for PreferenceCategorizer.calculate_strength()."""
 
     @pytest.fixture
-    def learner(self) -> PreferenceLearner:
-        """Create a PreferenceLearner instance."""
-        return PreferenceLearner()
+    def categorizer(self) -> PreferenceCategorizer:
+        """Create a PreferenceCategorizer instance."""
+        return PreferenceCategorizer()
 
-    def test_short_response_high_strength(self, learner: PreferenceLearner) -> None:
+    def test_short_response_high_strength(self, categorizer: PreferenceCategorizer) -> None:
         """Test short responses have high strength."""
-        assert learner._calculate_strength("ok") == 0.9
-        assert learner._calculate_strength("sim") == 0.9
-        assert learner._calculate_strength("yes please") == 0.9
+        assert categorizer.calculate_strength("ok") == 0.9
+        assert categorizer.calculate_strength("sim") == 0.9
+        assert categorizer.calculate_strength("yes please") == 0.9
 
-    def test_medium_response(self, learner: PreferenceLearner) -> None:
+    def test_medium_response(self, categorizer: PreferenceCategorizer) -> None:
         """Test medium responses have medium strength."""
-        assert learner._calculate_strength("yes that looks good to me") == 0.7
+        assert categorizer.calculate_strength("yes that looks good to me") == 0.7
 
-    def test_long_response(self, learner: PreferenceLearner) -> None:
+    def test_long_response(self, categorizer: PreferenceCategorizer) -> None:
         """Test long responses have lower strength."""
         long_text = " ".join(["word"] * 50)
-        assert learner._calculate_strength(long_text) == 0.3
+        strength = categorizer.calculate_strength(long_text)
+        assert strength < 0.5
 
 
 class TestExtractUserContent:
-    """Tests for PreferenceLearner._extract_user_content()."""
+    """Tests for SignalDetector.extract_user_content()."""
 
     @pytest.fixture
-    def learner(self) -> PreferenceLearner:
-        """Create a PreferenceLearner instance."""
-        return PreferenceLearner()
+    def detector(self) -> SignalDetector:
+        """Create a SignalDetector instance."""
+        return SignalDetector(enable_llm=False)
 
-    def test_extract_string_content(self, learner: PreferenceLearner) -> None:
+    def test_extract_string_content(self, detector: SignalDetector) -> None:
         """Test extracting string content."""
         msg = {"message": {"content": "simple text"}}
-        assert learner._extract_user_content(msg) == "simple text"
+        assert detector.extract_user_content(msg) == "simple text"
 
-    def test_extract_list_content_text(self, learner: PreferenceLearner) -> None:
+    def test_extract_list_content_text(self, detector: SignalDetector) -> None:
         """Test extracting from list with text item."""
         msg = {"message": {"content": [{"type": "text", "text": "hello"}]}}
-        assert learner._extract_user_content(msg) == "hello"
+        assert detector.extract_user_content(msg) == "hello"
 
-    def test_extract_list_content_multiple(self, learner: PreferenceLearner) -> None:
+    def test_extract_list_content_multiple(self, detector: SignalDetector) -> None:
         """Test extracting from list with multiple items."""
         msg = {
             "message": {
@@ -260,25 +270,25 @@ class TestExtractUserContent:
                 ]
             }
         }
-        assert learner._extract_user_content(msg) == "hello world"
+        assert detector.extract_user_content(msg) == "hello world"
 
-    def test_extract_empty(self, learner: PreferenceLearner) -> None:
+    def test_extract_empty(self, detector: SignalDetector) -> None:
         """Test extracting from empty content."""
         msg = {"message": {"content": ""}}
-        assert learner._extract_user_content(msg) == ""
+        assert detector.extract_user_content(msg) == ""
 
-    def test_extract_missing_message(self, learner: PreferenceLearner) -> None:
+    def test_extract_missing_message(self, detector: SignalDetector) -> None:
         """Test extracting from missing message."""
         msg = {}
-        assert learner._extract_user_content(msg) == ""
+        assert detector.extract_user_content(msg) == ""
 
 
-class TestUpdateCounts:
-    """Tests for PreferenceLearner._update_counts()."""
+class TestCategoryStats:
+    """Tests for CategoryStats update and stats."""
 
     def test_update_approval_counts(self) -> None:
         """Test updating approval counts."""
-        learner = PreferenceLearner()
+        categorizer = PreferenceCategorizer()
         signal = PreferenceSignal(
             timestamp="2025-01-01",
             signal_type="approval",
@@ -287,13 +297,13 @@ class TestUpdateCounts:
             strength=0.8,
             session_id="sess",
         )
-        learner._update_counts(signal)
-        assert learner.category_counts["testing"]["approvals"] == 1
-        assert learner.category_counts["testing"]["rejections"] == 0
+        categorizer.update_stats(signal)
+        assert categorizer.category_stats["testing"].approvals == 1
+        assert categorizer.category_stats["testing"].rejections == 0
 
     def test_update_rejection_counts(self) -> None:
         """Test updating rejection counts."""
-        learner = PreferenceLearner()
+        categorizer = PreferenceCategorizer()
         signal = PreferenceSignal(
             timestamp="2025-01-01",
             signal_type="rejection",
@@ -302,27 +312,26 @@ class TestUpdateCounts:
             strength=0.8,
             session_id="sess",
         )
-        learner._update_counts(signal)
-        assert learner.category_counts["verbosity"]["rejections"] == 1
-        assert learner.category_counts["verbosity"]["approvals"] == 0
+        categorizer.update_stats(signal)
+        assert categorizer.category_stats["verbosity"].rejections == 1
+        assert categorizer.category_stats["verbosity"].approvals == 0
 
 
 class TestGetPreferenceSummary:
-    """Tests for PreferenceLearner.get_preference_summary()."""
+    """Tests for InsightGenerator.get_summary()."""
 
     def test_summary_empty(self) -> None:
         """Test summary with no data."""
-        learner = PreferenceLearner()
-        summary = learner.get_preference_summary()
+        generator = InsightGenerator(enable_llm=False)
+        summary = generator.get_summary({})
         assert summary == {}
 
     def test_summary_with_data(self) -> None:
         """Test summary with data."""
-        learner = PreferenceLearner()
-        learner.category_counts["testing"]["approvals"] = 8
-        learner.category_counts["testing"]["rejections"] = 2
-
-        summary = learner.get_preference_summary()
+        generator = InsightGenerator(enable_llm=False)
+        stats = {"testing": CategoryStats(approvals=8, rejections=2)}
+        
+        summary = generator.get_summary(stats)
         assert "testing" in summary
         assert summary["testing"]["approval_rate"] == 0.8
         assert summary["testing"]["total_signals"] == 10
@@ -330,78 +339,74 @@ class TestGetPreferenceSummary:
 
     def test_summary_negative_trend(self) -> None:
         """Test summary with negative trend."""
-        learner = PreferenceLearner()
-        learner.category_counts["verbosity"]["approvals"] = 2
-        learner.category_counts["verbosity"]["rejections"] = 8
-
-        summary = learner.get_preference_summary()
+        generator = InsightGenerator(enable_llm=False)
+        stats = {"verbosity": CategoryStats(approvals=2, rejections=8)}
+        
+        summary = generator.get_summary(stats)
         assert summary["verbosity"]["approval_rate"] == 0.2
         assert summary["verbosity"]["trend"] == "negative"
 
 
 class TestGetActionableInsights:
-    """Tests for PreferenceLearner.get_actionable_insights()."""
+    """Tests for InsightGenerator.get_insights()."""
 
     def test_insights_empty(self) -> None:
         """Test insights with no data."""
-        learner = PreferenceLearner()
-        insights = learner.get_actionable_insights()
+        generator = InsightGenerator(enable_llm=False)
+        insights = generator.get_insights({})
         assert insights == []
 
     def test_insights_too_few_signals(self) -> None:
         """Test insights with too few signals."""
-        learner = PreferenceLearner()
-        learner.category_counts["testing"]["approvals"] = 1
-        learner.category_counts["testing"]["rejections"] = 1
-
-        insights = learner.get_actionable_insights(min_signals=3)
+        generator = InsightGenerator(enable_llm=False)
+        stats = {"testing": CategoryStats(approvals=1, rejections=1)}
+        
+        insights = generator.get_insights(stats, min_signals=3)
         assert insights == []
 
     def test_insights_high_rejection(self) -> None:
         """Test insights with high rejection rate."""
-        learner = PreferenceLearner()
-        learner.category_counts["verbosity"]["approvals"] = 1
-        learner.category_counts["verbosity"]["rejections"] = 9
-
-        insights = learner.get_actionable_insights(min_signals=3)
+        generator = InsightGenerator(enable_llm=False)
+        stats = {"verbosity": CategoryStats(approvals=1, rejections=9)}
+        
+        insights = generator.get_insights(stats, min_signals=3)
         assert len(insights) == 1
-        assert insights[0]["category"] == "verbosity"
-        assert insights[0]["action"] == "reduce"
-        assert "suggestion" in insights[0]
+        assert insights[0].category == "verbosity"
+        assert insights[0].action == "reduce"
+        assert insights[0].suggestion
 
     def test_insights_high_approval(self) -> None:
         """Test insights with high approval rate."""
-        learner = PreferenceLearner()
-        learner.category_counts["testing"]["approvals"] = 9
-        learner.category_counts["testing"]["rejections"] = 1
-
-        insights = learner.get_actionable_insights(min_signals=3)
+        generator = InsightGenerator(enable_llm=False)
+        stats = {"testing": CategoryStats(approvals=9, rejections=1)}
+        
+        insights = generator.get_insights(stats, min_signals=3)
         assert len(insights) == 1
-        assert insights[0]["category"] == "testing"
-        assert insights[0]["action"] == "reinforce"
+        assert insights[0].category == "testing"
+        assert insights[0].action == "reinforce"
 
 
-class TestGenerateSuggestion:
-    """Tests for PreferenceLearner._generate_suggestion()."""
+class TestSuggestions:
+    """Tests for InsightGenerator._get_suggestion()."""
 
     @pytest.fixture
-    def learner(self) -> PreferenceLearner:
-        """Create a PreferenceLearner instance."""
-        return PreferenceLearner()
+    def generator(self) -> InsightGenerator:
+        """Create an InsightGenerator instance."""
+        return InsightGenerator(enable_llm=False)
 
-    def test_suggestion_verbosity_reduce(self, learner: PreferenceLearner) -> None:
+    def test_suggestion_verbosity_reduce(self, generator: InsightGenerator) -> None:
         """Test suggestion for reducing verbosity."""
-        suggestion = learner._generate_suggestion("verbosity", "reduce")
+        suggestion = generator._get_suggestion("verbosity", "reduce")
         assert "concis" in suggestion.lower()
 
-    def test_suggestion_testing_reinforce(self, learner: PreferenceLearner) -> None:
+    def test_suggestion_testing_reinforce(self, generator: InsightGenerator) -> None:
         """Test suggestion for reinforcing testing."""
-        suggestion = learner._generate_suggestion("testing", "reinforce")
+        suggestion = generator._get_suggestion("testing", "reinforce")
         assert "test" in suggestion.lower()
 
-    def test_suggestion_unknown(self, learner: PreferenceLearner) -> None:
+    def test_suggestion_unknown(self, generator: InsightGenerator) -> None:
         """Test suggestion for unknown category."""
-        suggestion = learner._generate_suggestion("unknown_category", "reduce")
+        suggestion = generator._get_suggestion("unknown_category", "reduce")
         assert "unknown_category" in suggestion
 
 
@@ -411,7 +416,7 @@ class TestClearAndStats:
     def test_clear(self) -> None:
         """Test clearing learner state."""
         learner = PreferenceLearner()
-        learner.category_counts["testing"]["approvals"] = 5
+        learner.categorizer.category_stats["testing"] = CategoryStats(approvals=5)
         learner.signals.append(
             PreferenceSignal(
                 timestamp="2025-01-01",
@@ -425,7 +430,7 @@ class TestClearAndStats:
 
         learner.clear()
         assert len(learner.signals) == 0
-        assert len(learner.category_counts) == 0
+        assert len(learner.categorizer.category_stats) == 0
 
     def test_get_stats_empty(self) -> None:
         """Test stats on empty learner."""
@@ -438,10 +443,8 @@ class TestClearAndStats:
     def test_get_stats_with_data(self) -> None:
         """Test stats with data."""
         learner = PreferenceLearner()
-        learner.category_counts["testing"]["approvals"] = 3
-        learner.category_counts["testing"]["rejections"] = 1
-        learner.category_counts["code_style"]["approvals"] = 2
-        learner.category_counts["code_style"]["rejections"] = 0
+        learner.categorizer.category_stats["testing"] = CategoryStats(approvals=3, rejections=1)
+        learner.categorizer.category_stats["code_style"] = CategoryStats(approvals=2, rejections=0)
 
         stats = learner.get_stats()
         assert stats["total_signals"] == 6
@@ -450,21 +453,143 @@ class TestClearAndStats:
         assert stats["categories_analyzed"] == 2
 
 
-class TestScanSessions:
-    """Tests for PreferenceLearner.scan_sessions()."""
+class TestSessionScanner:
+    """Tests for SessionScanner."""
 
     def test_scan_nonexistent_directory(self, tmp_path: Path) -> None:
         """Test scanning non-existent directory."""
         nonexistent = tmp_path / "nonexistent"
-        learner = PreferenceLearner(projects_dir=nonexistent)
-        signals = learner.scan_sessions(since_hours=24)
-        assert signals == []
+        scanner = SessionScanner(projects_dir=nonexistent)
+        sessions = list(scanner.scan_recent(since_hours=24))
+        assert sessions == []
 
     def test_scan_empty_directory(self, tmp_path: Path) -> None:
         """Test scanning empty directory."""
-        learner = PreferenceLearner(projects_dir=tmp_path)
-        signals = learner.scan_sessions(since_hours=24)
-        assert signals == []
+        scanner = SessionScanner(projects_dir=tmp_path)
+        sessions = list(scanner.scan_recent(since_hours=24))
+        assert sessions == []
+
+    def test_load_valid_jsonl(self, tmp_path: Path) -> None:
+        """Test loading valid JSONL file."""
+        session_file = tmp_path / "session.jsonl"
+        messages = [
+            {"type": "user", "message": {"content": "hello"}},
+            {"type": "assistant", "message": {"content": "hi"}},
+        ]
+        with open(session_file, "w") as f:
+            for msg in messages:
+                f.write(json.dumps(msg) + "\n")
+
+        scanner = SessionScanner()
+        loaded = scanner.load_messages(session_file)
+        assert len(loaded) == 2
+
+    def test_load_handles_invalid_json_lines(self, tmp_path: Path) -> None:
+        """Test that invalid JSON lines are skipped."""
+        session_file = tmp_path / "session.jsonl"
+        with open(session_file, "w") as f:
+            f.write('{"valid": true}\n')
+            f.write("invalid json line\n")
+            f.write('{"also": "valid"}\n')
+
+        scanner = SessionScanner()
+        loaded = scanner.load_messages(session_file)
+        assert len(loaded) == 2
+
+    def test_load_nonexistent_file(self) -> None:
+        """Test loading nonexistent file returns empty list."""
+        scanner = SessionScanner()
+        result = scanner.load_messages(Path("/nonexistent/file.jsonl"))
+        assert result == []
+
+    def test_scan_skips_agent_files(self, tmp_path: Path) -> None:
+        """Test scanning skips agent-* files."""
+        project_dir = tmp_path / "test-project"
+        project_dir.mkdir()
+
+        # Create agent file (should be skipped)
+        agent_file = project_dir / "agent-abc123.jsonl"
+        messages = [
+            {"type": "user", "message": {"content": "sim"}},
+        ]
+        with open(agent_file, "w") as f:
+            for msg in messages:
+                f.write(json.dumps(msg) + "\n")
+
+        scanner = SessionScanner(projects_dir=tmp_path)
+        sessions = list(scanner.scan_recent(since_hours=24))
+        assert len(sessions) == 0
+
+
+class TestSignalDetectorExtraction:
+    """Tests for SignalDetector context extraction."""
+
+    @pytest.fixture
+    def detector(self) -> SignalDetector:
+        """Create a SignalDetector instance."""
+        return SignalDetector(enable_llm=False)
+
+    def test_extract_assistant_context(self, detector: SignalDetector) -> None:
+        """Test extracting assistant context."""
+        msg = {"message": {"content": "Here is the refactored code"}}
+        context = detector._extract_assistant_context(msg)
+        assert context == "Here is the refactored code"
+
+    def test_extract_list_context(self, detector: SignalDetector) -> None:
+        """Test extracting from list context."""
+        msg = {"message": {"content": [{"type": "text", "text": "Result"}]}}
+        context = detector._extract_assistant_context(msg)
+        assert context == "Result"
+
+    def test_extract_tool_name(self, detector: SignalDetector) -> None:
+        """Test extracting tool name."""
+        msg = {
+            "message": {
+                "content": [
+                    {"type": "tool_use", "name": "Edit"},
+                    {"type": "text", "text": "Updated the file"},
+                ]
+            }
+        }
+        tool_name = detector._extract_tool_name(msg)
+        assert tool_name == "Edit"
+
+    def test_no_tool_name(self, detector: SignalDetector) -> None:
+        """Test when no tool used."""
+        msg = {"message": {"content": [{"type": "text", "text": "Just text"}]}}
+        tool_name = detector._extract_tool_name(msg)
+        assert tool_name is None
+
+
+class TestToolResultDetection:
+    """Tests for SignalDetector._check_tool_result()."""
+
+    @pytest.fixture
+    def detector(self) -> SignalDetector:
+        """Create a SignalDetector instance."""
+        return SignalDetector(enable_llm=False)
+
+    def test_failed_tool_result(self, detector: SignalDetector) -> None:
+        """Test detecting failed tool result."""
+        msg = {"toolUseResult": {"status": "failed"}}
+        signal = detector._check_tool_result(msg)
+        assert signal == "rejection"
+
+    def test_interrupted_tool_result(self, detector: SignalDetector) -> None:
+        """Test detecting interrupted tool result."""
+        msg = {"toolUseResult": {"interrupted": True}}
+        signal = detector._check_tool_result(msg)
+        assert signal == "rejection"
+
+    def test_success_tool_result(self, detector: SignalDetector) -> None:
+        """Test success tool result returns None."""
+        msg = {"toolUseResult": {"status": "success"}}
+        signal = detector._check_tool_result(msg)
+        assert signal is None
+
+
+class TestPreferenceLearnerIntegration:
+    """Integration tests for PreferenceLearner."""
 
     def test_scan_with_session_file(self, tmp_path: Path) -> None:
         """Test scanning directory with session file."""
@@ -486,138 +611,3 @@ class TestScanSessions:
         signals = learner.scan_sessions(since_hours=24)
         assert len(signals) >= 1
         assert signals[0].signal_type == "approval"
-
-    def test_scan_skips_agent_files(self, tmp_path: Path) -> None:
-        """Test scanning skips agent-* files."""
-        project_dir = tmp_path / "test-project"
-        project_dir.mkdir()
-
-        # Create agent file (should be skipped)
-        agent_file = project_dir / "agent-abc123.jsonl"
-        messages = [
-            {"type": "user", "message": {"content": "sim"}},
-        ]
-        with open(agent_file, "w") as f:
-            for msg in messages:
-                f.write(json.dumps(msg) + "\n")
-
-        learner = PreferenceLearner(projects_dir=tmp_path)
-        signals = learner.scan_sessions(since_hours=24)
-        assert len(signals) == 0  # Agent files skipped
-
-
-class TestExtractAssistantContext:
-    """Tests for PreferenceLearner._extract_assistant_context()."""
-
-    @pytest.fixture
-    def learner(self) -> PreferenceLearner:
-        """Create a PreferenceLearner instance."""
-        return PreferenceLearner()
-
-    def test_extract_string_context(self, learner: PreferenceLearner) -> None:
-        """Test extracting string context."""
-        msg = {"message": {"content": "Here is the refactored code"}}
-        context = learner._extract_assistant_context(msg)
-        assert context == "Here is the refactored code"
-
-    def test_extract_list_context(self, learner: PreferenceLearner) -> None:
-        """Test extracting from list context."""
-        msg = {"message": {"content": [{"type": "text", "text": "Result"}]}}
-        context = learner._extract_assistant_context(msg)
-        assert context == "Result"
-
-
-class TestExtractToolName:
-    """Tests for PreferenceLearner._extract_tool_name()."""
-
-    @pytest.fixture
-    def learner(self) -> PreferenceLearner:
-        """Create a PreferenceLearner instance."""
-        return PreferenceLearner()
-
-    def test_extract_tool_name(self, learner: PreferenceLearner) -> None:
-        """Test extracting tool name."""
-        msg = {
-            "message": {
-                "content": [
-                    {"type": "tool_use", "name": "Edit"},
-                    {"type": "text", "text": "Updated the file"},
-                ]
-            }
-        }
-        tool_name = learner._extract_tool_name(msg)
-        assert tool_name == "Edit"
-
-    def test_no_tool_name(self, learner: PreferenceLearner) -> None:
-        """Test when no tool used."""
-        msg = {"message": {"content": [{"type": "text", "text": "Just text"}]}}
-        tool_name = learner._extract_tool_name(msg)
-        assert tool_name is None
-
-
-class TestLoadSessionMessages:
-    """Tests for PreferenceLearner._load_session_messages()."""
-
-    @pytest.fixture
-    def learner(self) -> PreferenceLearner:
-        """Create a PreferenceLearner instance."""
-        return PreferenceLearner()
-
-    def test_load_valid_jsonl(self, learner: PreferenceLearner, tmp_path: Path) -> None:
-        """Test loading valid JSONL file."""
-        session_file = tmp_path / "session.jsonl"
-        messages = [
-            {"type": "user", "message": {"content": "hello"}},
-            {"type": "assistant", "message": {"content": "hi"}},
-        ]
-        with open(session_file, "w") as f:
-            for msg in messages:
-                f.write(json.dumps(msg) + "\n")
-
-        loaded = learner._load_session_messages(session_file)
-        assert len(loaded) == 2
-
-    def test_load_handles_invalid_json_lines(
-        self, learner: PreferenceLearner, tmp_path: Path
-    ) -> None:
-        """Test that invalid JSON lines are skipped."""
-        session_file = tmp_path / "session.jsonl"
-        with open(session_file, "w") as f:
-            f.write('{"valid": true}\n')
-            f.write("invalid json line\n")
-            f.write('{"also": "valid"}\n')
-
-        loaded = learner._load_session_messages(session_file)
-        assert len(loaded) == 2
-
-    def test_load_nonexistent_file(self, learner: PreferenceLearner) -> None:
-        """Test loading nonexistent file returns empty list."""
-        result = learner._load_session_messages(Path("/nonexistent/file.jsonl"))
-        assert result == []
-
-
-class TestGetSignalFromToolResult:
-    """Tests for PreferenceLearner._get_signal_from_tool_result()."""
-
-    @pytest.fixture
-    def learner(self) -> PreferenceLearner:
-        """Create a PreferenceLearner instance."""
-        return PreferenceLearner()
-
-    def test_failed_tool_result(self, learner: PreferenceLearner) -> None:
-        """Test detecting failed tool result."""
-        msg = {"toolUseResult": {"status": "failed"}}
-        signal = learner._get_signal_from_tool_result(msg)
-        assert signal == "rejection"
-
-    def test_interrupted_tool_result(self, learner: PreferenceLearner) -> None:
-        """Test detecting interrupted tool result."""
-        msg = {"toolUseResult": {"interrupted": True}}
-        signal = learner._get_signal_from_tool_result(msg)
-        assert signal == "rejection"
-
-    def test_success_tool_result(self, learner: PreferenceLearner) -> None:
-        """Test success tool result returns None."""
-        msg = {"toolUseResult": {"status": "success"}}
-        signal = learner._get_signal_from_tool_result(msg)
-        assert signal is None

@@ -162,7 +162,19 @@ class DaimonDaemon:
         except ImportError as e:
             logger.warning("Reflection Engine not available: %s", e)
 
-        # 6. Activity Store Flush Loop
+        # 6. NOESIS Data Ingestion Service
+        try:
+            from integrations.noesis_ingestion import get_ingestion_service
+            ingestion = get_ingestion_service()
+            self.tasks["noesis_ingestion"] = asyncio.create_task(
+                ingestion.start(),
+                name="noesis_ingestion"
+            )
+            logger.info("NOESIS Ingestion Service started")
+        except ImportError as e:
+            logger.warning("NOESIS Ingestion Service not available: %s", e)
+
+        # 7. Activity Store Flush Loop
         await self._start_activity_store()
 
     async def _start_registry_watchers(self) -> None:
