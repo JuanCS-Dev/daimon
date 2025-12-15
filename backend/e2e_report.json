@@ -1,0 +1,219 @@
+{
+  "timestamp": "2025-12-08T21:51:50.502514",
+  "summary": {
+    "total": 22,
+    "passed": 8,
+    "failed": 14,
+    "skipped": 0,
+    "success_rate": 36.36363636363637,
+    "duration_ms": 8319.775581359863
+  },
+  "results": [
+    {
+      "name": "neural_core_health",
+      "category": "health",
+      "passed": false,
+      "duration_ms": 4.74858283996582,
+      "details": "",
+      "error": "All connection attempts failed",
+      "response_sample": ""
+    },
+    {
+      "name": "episodic_memory_health",
+      "category": "health",
+      "passed": true,
+      "duration_ms": 2.2623538970947266,
+      "details": "HTTP 200",
+      "error": "",
+      "response_sample": "{\"status\":\"healthy\",\"service\":\"episodic_memory\",\"version\":\"2.0.0\",\"timestamp\":\"2025-12-08T21:51:50.588003\",\"persistence\":{\"qdrant_available\":false,\"embeddings_enabled\":false,\"total_memories\":61}}"
+    },
+    {
+      "name": "api_gateway_health",
+      "category": "health",
+      "passed": true,
+      "duration_ms": 1.7576217651367188,
+      "details": "HTTP 200",
+      "error": "",
+      "response_sample": "{\"status\":\"healthy\",\"service\":\"api_gateway\",\"timestamp\":\"2025-12-08T21:51:50.590153\"}"
+    },
+    {
+      "name": "qdrant_health",
+      "category": "health",
+      "passed": false,
+      "duration_ms": 0.7257461547851562,
+      "details": "",
+      "error": "All connection attempts failed",
+      "response_sample": ""
+    },
+    {
+      "name": "redis_health",
+      "category": "health",
+      "passed": false,
+      "duration_ms": 39.049625396728516,
+      "details": "",
+      "error": "Error 111 connecting to localhost:6379. Connect call failed ('127.0.0.1', 6379).",
+      "response_sample": ""
+    },
+    {
+      "name": "consciousness_stream",
+      "category": "consciousness",
+      "passed": false,
+      "duration_ms": 26.975393295288086,
+      "details": "",
+      "error": "All connection attempts failed",
+      "response_sample": ""
+    },
+    {
+      "name": "esgt_status",
+      "category": "consciousness",
+      "passed": false,
+      "duration_ms": 27.435302734375,
+      "details": "",
+      "error": "All connection attempts failed",
+      "response_sample": ""
+    },
+    {
+      "name": "memory_store",
+      "category": "memory",
+      "passed": false,
+      "duration_ms": 2.2459030151367188,
+      "details": "HTTP 404",
+      "error": "",
+      "response_sample": "{}"
+    },
+    {
+      "name": "memory_search",
+      "category": "memory",
+      "passed": false,
+      "duration_ms": 1.1277198791503906,
+      "details": "HTTP 404",
+      "error": "",
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "name": "memory_stats",
+      "category": "memory",
+      "passed": false,
+      "duration_ms": 1.0747909545898438,
+      "details": "HTTP 404",
+      "error": "",
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "name": "llm_config_load",
+      "category": "llm",
+      "passed": false,
+      "duration_ms": 16.957759857177734,
+      "details": "Provider: none, Configured: False",
+      "error": "",
+      "response_sample": ""
+    },
+    {
+      "name": "llm_health_check",
+      "category": "llm",
+      "passed": false,
+      "duration_ms": 0.022649765014648438,
+      "details": "",
+      "error": "No LLM provider configured. Set NEBIUS_API_KEY or GEMINI_API_KEY environment variable.",
+      "response_sample": ""
+    },
+    {
+      "name": "llm_generation",
+      "category": "llm",
+      "passed": false,
+      "duration_ms": 0.017881393432617188,
+      "details": "",
+      "error": "No LLM provider configured. Set NEBIUS_API_KEY or GEMINI_API_KEY environment variable.",
+      "response_sample": ""
+    },
+    {
+      "name": "jwt_creation_validation",
+      "category": "security",
+      "passed": true,
+      "duration_ms": 294.7957515716553,
+      "details": "User: test_user, Roles: ['readonly']",
+      "error": "",
+      "response_sample": ""
+    },
+    {
+      "name": "invalid_token_rejection",
+      "category": "security",
+      "passed": true,
+      "duration_ms": 0.07963180541992188,
+      "details": "Correctly rejected invalid token",
+      "error": "",
+      "response_sample": ""
+    },
+    {
+      "name": "sql_injection_protection",
+      "category": "security",
+      "passed": true,
+      "duration_ms": 2937.7713203430176,
+      "details": "Malicious input blocked or sandboxed",
+      "error": "",
+      "response_sample": ""
+    },
+    {
+      "name": "graceful_offline_handling",
+      "category": "resilience",
+      "passed": true,
+      "duration_ms": 30.093908309936523,
+      "details": "Correctly detected offline: All connection attempts failed",
+      "error": "",
+      "response_sample": ""
+    },
+    {
+      "name": "concurrent_load_handling",
+      "category": "resilience",
+      "passed": true,
+      "duration_ms": 2851.8784046173096,
+      "details": "100 concurrent ops, 0 unexpected crashes",
+      "error": "",
+      "response_sample": ""
+    },
+    {
+      "name": "timeout_handling",
+      "category": "resilience",
+      "passed": true,
+      "duration_ms": 2078.7513256073,
+      "details": "Request completed/timed out correctly",
+      "error": "",
+      "response_sample": ""
+    },
+    {
+      "name": "reactive_fabric_metrics",
+      "category": "api",
+      "passed": false,
+      "duration_ms": 0.8366107940673828,
+      "details": "",
+      "error": "All connection attempts failed",
+      "response_sample": ""
+    },
+    {
+      "name": "safety_status",
+      "category": "api",
+      "passed": false,
+      "duration_ms": 0.58746337890625,
+      "details": "",
+      "error": "All connection attempts failed",
+      "response_sample": ""
+    },
+    {
+      "name": "chat_endpoint",
+      "category": "api",
+      "passed": false,
+      "duration_ms": 0.579833984375,
+      "details": "",
+      "error": "All connection attempts failed",
+      "response_sample": ""
+    }
+  ],
+  "configuration": {
+    "neural_core": "http://localhost:8001",
+    "metacognitive": "http://localhost:8002",
+    "api_gateway": "http://localhost:8000",
+    "episodic_memory": "http://localhost:8102",
+    "qdrant": "http://localhost:6333",
+    "redis": "redis://localhost:6379"
+  }
+}

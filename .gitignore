@@ -1,68 +1,98 @@
+# =============================================================================
+# NOESIS - Digital Daimon
+# Artificial Consciousness System
+# =============================================================================
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual environments
-venv/
-ENV/
-env/
 .venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+*.egg-info/
+dist/
+build/
+.eggs/
 
 # IDE
-.idea/
 .vscode/
+.idea/
 *.swp
 *.swo
 *~
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-.nox/
-coverage.xml
-*.cover
-*.py,cover
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Logs
+# Docker
 *.log
-logs/
-
-# Local data
-.daimon/
-*.sock
-
-# Environment
-.env
-.env.local
+docker-compose.override.yml
 
 # OS
 .DS_Store
 Thumbs.db
+.directory
 
-# Symlinks (handled separately)
-noesis
+# Maximus/Legacy
+legacy/
+backups/
+
+# Security (NEVER commit these)
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+.secrets/
+*.secret.*
+credentials*.json
+
+# Noesis Data (permanent storage - sensitive, not committed)
+data/sessions/*.json
+data/memory/*.json
+data/vault/*.json
+data/wal/*.json
+data/entity_index.json
+!data/**/.gitkeep
+
+# Qdrant local data
+.qdrant_data/
+
+# Coverage reports
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+
+# Node.js
+node_modules/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# Debug artifacts
+debug_screenshot.png
+*.debug.log
+
+# Temporary files
+*.tmp
+*.temp
+.noesis.pid
+
+# Generated documentation
+docs/_build/
+
+# Model artifacts (large files)
+models/
+*.onnx
+*.pt
+*.pth
+*.h5
+*.ckpt
+
+# Training artifacts
+training_output/
+wandb/
+mlruns/

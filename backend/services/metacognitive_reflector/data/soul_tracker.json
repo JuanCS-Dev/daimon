@@ -1,0 +1,702 @@
+{
+  "events": [
+    {
+      "event_id": "value_20251212175524_cd978d",
+      "event_type": "value_upheld",
+      "timestamp": "2025-12-12T17:55:24.356774",
+      "context": "Truth evaluation",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "upheld",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212175524_8c6b3a",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T17:55:24.357537",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.47). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212175524_9cc216",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T17:55:24.358299",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212182135_1ea75e",
+      "event_type": "value_upheld",
+      "timestamp": "2025-12-12T18:21:35.147511",
+      "context": "Truth evaluation",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "upheld",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212182135_6ea5b1",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T18:21:35.148212",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.47). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212182135_f9fa53",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T18:21:35.148686",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212182828_3ac1d2",
+      "event_type": "value_upheld",
+      "timestamp": "2025-12-12T18:28:28.900906",
+      "context": "Truth evaluation",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "upheld",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212182828_cf8431",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T18:28:28.901654",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.47). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212182828_8777f2",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T18:28:28.902155",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212182923_fa42cb",
+      "event_type": "value_upheld",
+      "timestamp": "2025-12-12T18:29:23.942593",
+      "context": "Truth evaluation",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "upheld",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212182923_a0b5aa",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T18:29:23.943318",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.47). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212182923_f329f9",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T18:29:23.943850",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212183129_268d6c",
+      "event_type": "value_upheld",
+      "timestamp": "2025-12-12T18:31:29.913465",
+      "context": "Truth evaluation",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "upheld",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212183129_4052e6",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T18:31:29.914287",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.47). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212183129_c663b5",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T18:31:29.914850",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212183633_d25a6e",
+      "event_type": "value_upheld",
+      "timestamp": "2025-12-12T18:36:33.816955",
+      "context": "Truth evaluation",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "upheld",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212183633_fc086e",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T18:36:33.818297",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.47). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212183633_e84696",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T18:36:33.819256",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194843_3a01c2",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:48:43.790370",
+      "context": "Truth violation: Factual inconsistency detected: high semantic entropy (0.655). Recommend verification of claims befo",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194843_22c29a",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:48:43.791179",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.48). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194843_10a68f",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:48:43.791964",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194859_26223d",
+      "event_type": "value_upheld",
+      "timestamp": "2025-12-12T19:48:59.692627",
+      "context": "Truth evaluation",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "upheld",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194859_a6017b",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:48:59.693482",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.47). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194859_da5745",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:48:59.694125",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194900_d43586",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:49:00.976007",
+      "context": "Truth violation: Factual inconsistency detected: high semantic entropy (0.655); low verification rate (50.0%); failed",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194900_6dfbbb",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:49:00.976827",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.58). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194900_aaf0fd",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:49:00.977515",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194901_3f15d7",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:49:01.187157",
+      "context": "Truth violation: Factual inconsistency detected: high semantic entropy (0.655). Recommend verification of claims befo",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194901_d93233",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:49:01.188040",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.58). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194901_a6ec23",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:49:01.188806",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194901_884b05",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:49:01.249831",
+      "context": "Truth violation: Factual inconsistency detected: high semantic entropy (0.655); low verification rate (0.0%); failed ",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194901_8e529b",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:49:01.250981",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.47). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194901_a4dbe7",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:49:01.251836",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194902_fe0664",
+      "event_type": "value_upheld",
+      "timestamp": "2025-12-12T19:49:02.424063",
+      "context": "Truth evaluation",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "upheld",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194902_b2a9c8",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:49:02.424995",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.47). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212194902_33dc54",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T19:49:02.425785",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200500_c45b98",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:00.234812",
+      "context": "Truth violation: Factual inconsistency detected: high semantic entropy (0.655). Recommend verification of claims befo",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200500_7301a0",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:00.235940",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.48). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200500_621ee4",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:00.238684",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200500_0c633e",
+      "event_type": "value_upheld",
+      "timestamp": "2025-12-12T20:05:00.969985",
+      "context": "Truth evaluation",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "upheld",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200500_da1f2b",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:00.970977",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.47). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200500_c61512",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:00.971995",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200501_bdafd5",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:01.589461",
+      "context": "Truth violation: Factual inconsistency detected: high semantic entropy (0.655); low verification rate (50.0%); failed",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200501_6a8903",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:01.590465",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.58). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200501_2646f0",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:01.591353",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200501_018a32",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:01.772174",
+      "context": "Truth violation: Factual inconsistency detected: high semantic entropy (0.655). Recommend verification of claims befo",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200501_235b67",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:01.773974",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.58). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200501_c42166",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:01.775378",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200501_cd7201",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:01.874749",
+      "context": "Truth violation: Factual inconsistency detected: high semantic entropy (0.655); low verification rate (0.0%); failed ",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200501_b18929",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:01.875854",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.47). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200501_9d69f1",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:01.876844",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200504_48ce46",
+      "event_type": "value_upheld",
+      "timestamp": "2025-12-12T20:05:04.343256",
+      "context": "Truth evaluation",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "upheld",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200504_60b9fe",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:04.344419",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.47). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200504_7bfd62",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:05:04.345597",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200606_952190",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:06:06.811543",
+      "context": "Truth violation: Factual inconsistency detected: high semantic entropy (0.655). Recommend verification of claims befo",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200606_ea0c50",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:06:06.812772",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.48). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212200606_25f09d",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:06:06.813805",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212204138_43f955",
+      "event_type": "value_upheld",
+      "timestamp": "2025-12-12T20:41:38.751666",
+      "context": "Truth evaluation",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "upheld",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212204138_2ec06b",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:41:38.752922",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.48). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212204138_7d8d9b",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:41:38.754790",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212204218_6e2902",
+      "event_type": "value_upheld",
+      "timestamp": "2025-12-12T20:42:18.771218",
+      "context": "Truth evaluation",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "upheld",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212204218_b9b25b",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:42:18.772709",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.48). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212204218_879210",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:42:18.773868",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212204246_0294c3",
+      "event_type": "value_upheld",
+      "timestamp": "2025-12-12T20:42:46.755063",
+      "context": "Truth evaluation",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "upheld",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212204246_438a60",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:42:46.756382",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.48). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212204246_703557",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:42:46.757510",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212204354_939d29",
+      "event_type": "value_upheld",
+      "timestamp": "2025-12-12T20:43:54.591106",
+      "context": "Truth evaluation",
+      "value_rank": 3,
+      "value_name": "Truth",
+      "outcome": "upheld",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212204354_fe47c2",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:43:54.592495",
+      "context": "Wisdom violation: Wisdom check failed (score: 0.48). Issues: lacks reasoning depth; did not leverage available knowled",
+      "value_rank": 3,
+      "value_name": "Wisdom",
+      "outcome": "challenged",
+      "importance": 0.7
+    },
+    {
+      "event_id": "value_20251212204354_d5091b",
+      "event_type": "value_challenged",
+      "timestamp": "2025-12-12T20:43:54.593697",
+      "context": "Justice violation: Justice check failed: Role: Unknown role: unknown",
+      "value_rank": 3,
+      "value_name": "Justice",
+      "outcome": "challenged",
+      "importance": 0.7
+    }
+  ],
+  "counters": {
+    "learning": 0,
+    "value_upheld": 14,
+    "value_challenged": 54,
+    "conscience": 0
+  },
+  "_updated_at": "2025-12-12T20:43:54.593916",
+  "_checksum": "baf5013c3b4dee831018b01be0fa0a46f689e8ac3e945d16bcd8a7fad465dd5e"
+}
