@@ -1,0 +1,30 @@
+{
+  "total_examples": 3838,
+  "avg_score": 98.79624804585721,
+  "distribution": {
+    "excellent": 3838,
+    "good": 0,
+    "fair": 0,
+    "poor": 0
+  },
+  "category_scores": {
+    "anti_sycophancy": 99.95555555555555,
+    "modern_philosophy": 100.0,
+    "scientific_method": 97.5,
+    "counter_example": 98.0,
+    "ethical_dilemma": 100.0,
+    "logical_argument": 100.0,
+    "tribunal": 93.33333333333333,
+    "maieutica": 100.0,
+    "value_application": 96.22222222222223,
+    "hermetic_wisdom": 100.0,
+    "jesus_philosophy": 100.0,
+    "presocratic_mathematics": 100.0
+  },
+  "issues": {
+    "critical_count": 0,
+    "warning_count": 0,
+    "info_count": 462
+  },
+  "critical_items": []
+}

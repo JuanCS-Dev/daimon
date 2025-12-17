@@ -11,8 +11,28 @@ Integração do ConsciousnessSystem com o pipeline de comunicação.
 from __future__ import annotations
 
 import logging
+import sys
+import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
+
+# --- ANTI-ZOMBIE PROTECTION (Port 8001) ---
+try:
+    # Attempt to locate backend/services/shared dynamically
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # Walk up to find 'backend/services'
+    # Path: src/maximus_core_service/main.py -> ../../../ -> services
+    services_dir = os.path.abspath(os.path.join(current_dir, "../../../"))
+    if os.path.isdir(os.path.join(services_dir, "shared")):
+        if services_dir not in sys.path:
+            sys.path.insert(0, services_dir)
+        
+        from shared.lifecycle import ensure_port_protection, install_signal_handlers
+        ensure_port_protection(8001, "Maximus Core")
+        install_signal_handlers()
+except Exception as e:
+    print(f"[WARNING] Anti-Zombie proctection failed: {e}")
+# ------------------------------------------
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,8 +48,12 @@ from maximus_core_service.consciousness.api.streaming import set_maximus_conscio
 from maximus_core_service.consciousness.exocortex.factory import ExocortexFactory
 from maximus_core_service.config import get_settings
 
-# SINGULARIDADE: Import ConsciousnessSystem
+# SINGULARIDADE: Import ConsciousnessSystem & Introspection API
 from maximus_core_service.consciousness.system import ConsciousnessSystem
+from maximus_core_service.consciousness.florescimento.introspection_api import (
+    router as florescimento_router,
+    set_global_bridge,
+)
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -53,12 +77,24 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
 
     # Startup
     initialize_service()
+    init_reflector()  # Initialize Reflector dependencies
+    # init_reflector()  # Initialize Reflector dependencies - Moved below
     ExocortexFactory.initialize(data_dir=str(settings.base_path / ".data"))
 
     # SINGULARIDADE: Initialize and start ConsciousnessSystem
     logger.info("[SINGULARIDADE] Initializing ConsciousnessSystem...")
     _consciousness_system = ConsciousnessSystem()
     await _consciousness_system.start()
+    
+    # SINGULARIDADE: Inject Bridge into Introspection API
+    if _consciousness_system.consciousness_bridge:
+        set_global_bridge(_consciousness_system.consciousness_bridge)
+        logger.info("[SINGULARIDADE] ConsciousnessBridge injected into API")
+    
+    # Initialize and start Journalor (File Persistence)
+    from maximus_core_service.consciousness.exocortex.journalor import Journalor
+    _journalor = Journalor()
+    await _journalor.start()
 
     # Register with Exocortex router for /journal endpoint
     set_consciousness_system(_consciousness_system)
@@ -101,6 +137,13 @@ app.add_middleware(
 
 app.include_router(api_router, prefix="/v1")
 app.include_router(exocortex_router, prefix="/v1")
+app.include_router(florescimento_router, prefix="/v1")  # Fix: Introspection Endpoint
+
+# Metacognitive Reflector
+from metacognitive_reflector.api.routes import router as reflector_router
+from metacognitive_reflector.api.dependencies import initialize_service as init_reflector
+
+app.include_router(reflector_router, prefix="/v1/metacognitive")
 
 # MAXIMUS: Consciousness API with SSE streaming (will be populated on startup)
 # Note: Router created with empty dict, system set via setter during lifespan
@@ -503,3 +546,10 @@ async def store_episode(episode: EpisodeRequest) -> EpisodeResponse:
         stored=False,
         memory_id=None,
     )
+
+
+if __name__ == "__main__":
+    import uvicorn
+    # Allow execution as script
+    uvicorn.run(app, host="0.0.0.0", port=8001)
+

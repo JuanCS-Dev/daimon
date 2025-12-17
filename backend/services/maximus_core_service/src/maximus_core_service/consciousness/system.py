@@ -58,45 +58,13 @@ from maximus_core_service.consciousness.florescimento import UnifiedSelfConcept,
 # G5: Human-In-The-Loop (HITL) - Continuous Human Overlay
 from maximus_core_service.consciousness.hitl import HumanCortexBridge, OverlayPriority
 
-# SINGULARIDADE: LLM Client for Language Motor (Nebius via metacognitive_reflector)
+# SINGULARIDADE: LLM Client for Language Motor (Gemini 3.0 Pro)
 try:
-    from metacognitive_reflector.llm import get_llm_client as get_nebius_client
+    from maximus_core_service.utils.gemini_client import GeminiClient
     HAS_LLM_CLIENT = True
 except ImportError:
-    get_nebius_client = None  # type: ignore
+    GeminiClient = None  # type: ignore
     HAS_LLM_CLIENT = False
-
-
-class LLMClientAdapter:
-    """
-    Adapter to bridge UnifiedLLMClient (metacognitive_reflector) to ConsciousnessBridge interface.
-
-    ConsciousnessBridge expects: generate_text(prompt, system_instruction, temperature, max_tokens) -> {"text": ...}
-    UnifiedLLMClient has: generate(prompt, system_instruction, temperature, max_tokens) -> LLMResponse.text
-    """
-
-    def __init__(self, unified_client):
-        self._client = unified_client
-
-    async def generate_text(
-        self,
-        prompt: str,
-        system_instruction: str = None,
-        temperature: float = 0.7,
-        max_tokens: int = 512,
-    ) -> dict:
-        """Adapt UnifiedLLMClient.generate() to expected interface."""
-        try:
-            response = await self._client.generate(
-                prompt=prompt,
-                system_instruction=system_instruction,
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
-            return {"text": response.text}
-        except Exception as e:
-            logger.warning("[LLM Adapter] Generation failed: %s", e)
-            return {"text": ""}
 
 # MNEMOSYNE: Episodic Memory Client for persistent memory
 from maximus_core_service.consciousness.episodic_memory.client import (
@@ -113,6 +81,9 @@ from maximus_core_service.consciousness.meta_optimizer.config_tuner import (
     ConfigTuner,
     get_config_tuner,
 )
+
+# PROACTIVE CONSCIOUSNESS: Spontaneous thought generation
+from maximus_core_service.consciousness.proactive import ProactiveEngine, ProactiveConfig
 
 # Prometheus Metrics
 consciousness_tig_node_count = Gauge(
@@ -182,6 +153,12 @@ class ConsciousnessConfig:
     # Reactive Fabric (Sprint 3)
     reactive: ReactiveConfig = field(default_factory=ReactiveConfig)
 
+    # PROACTIVE CONSCIOUSNESS: Spontaneous thought generation
+    proactive_enabled: bool = False  # DISABLED by default (safe)
+    proactive_interval_seconds: float = 30.0
+    proactive_min_silence_seconds: float = 60.0
+    proactive_max_speaks_per_hour: int = 4
+
 
 class ConsciousnessSystem:
     """Manages complete consciousness system lifecycle.
@@ -236,6 +213,9 @@ class ConsciousnessSystem:
         # META-OPTIMIZER: Self-Improvement (Phase 4)
         self.coherence_tracker: CoherenceTracker | None = None
         self.config_tuner: ConfigTuner | None = None
+
+        # PROACTIVE CONSCIOUSNESS: Spontaneous thought generation
+        self.proactive_engine: ProactiveEngine | None = None
 
     async def start(self) -> None:
         """Start consciousness system.
@@ -323,17 +303,17 @@ class ConsciousnessSystem:
             )
             await self.self_concept.update()  # Initial hydration
 
-            # SINGULARIDADE: Create LLM Client as Language Motor (Nebius via metacognitive_reflector)
+            # SINGULARIDADE: Create LLM Client as Language Motor (Gemini 3.0)
             llm_client = None
-            if HAS_LLM_CLIENT and get_nebius_client is not None:
+            if HAS_LLM_CLIENT and GeminiClient is not None:
                 try:
-                    nebius_client = get_nebius_client()
-                    llm_client = LLMClientAdapter(nebius_client)
-                    logger.info("  ✅ Nebius LLM initialized (Language Motor active)")
+                    # Instantiates using settings from environment (GEMINI_API_KEY, etc)
+                    llm_client = GeminiClient()
+                    logger.info("  ✅ Gemini 3.0 LLM initialized (Language Motor active)")
                 except Exception as e:
-                    logger.warning("  ⚠️  Nebius LLM unavailable: %s (using fallback)", e)
+                    logger.warning("  ⚠️  Gemini LLM initialization failed: %s (using fallback)", e)
             else:
-                logger.info("  ⚠️  LLM client not available (using fallback narrative)")
+                logger.info("  ⚠️  LLM client module not found (using fallback narrative)")
 
             self.consciousness_bridge = ConsciousnessBridge(
                 unified_self=self.self_concept,
@@ -398,6 +378,24 @@ class ConsciousnessSystem:
                     self.config.reactive.collection_interval_ms
                 )
 
+            # 7. PROACTIVE CONSCIOUSNESS: Initialize spontaneous thought engine
+            if self.config.proactive_enabled:
+                logger.info("  ├─ Creating Proactive Consciousness Engine...")
+                proactive_config = ProactiveConfig(
+                    enabled=True,
+                    wandering_interval_seconds=self.config.proactive_interval_seconds,
+                    min_silence_before_speech=self.config.proactive_min_silence_seconds,
+                    max_speaks_per_hour=self.config.proactive_max_speaks_per_hour,
+                )
+                self.proactive_engine = ProactiveEngine(
+                    consciousness_system=self,
+                    consciousness_bridge=self.consciousness_bridge,
+                    config=proactive_config,
+                )
+                await self.proactive_engine.start()
+                logger.info("  ✅ Proactive Consciousness active (interval=%ss)",
+                           self.config.proactive_interval_seconds)
+
             self._running = True
             logger.info("✅ Consciousness System fully operational")
             logger.info("🧠 Consciousness System STARTED")
@@ -438,6 +436,11 @@ class ConsciousnessSystem:
             if self.orchestrator:
                 await self.orchestrator.stop()
                 logger.info("  ✅ Reactive Fabric stopped")
+
+            # PROACTIVE: Stop proactive engine
+            if self.proactive_engine:
+                await self.proactive_engine.stop()
+                logger.info("  ✅ Proactive Consciousness stopped")
 
             if self.esgt_coordinator:
                 await self.esgt_coordinator.stop()

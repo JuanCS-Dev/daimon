@@ -263,7 +263,7 @@ class IncidentReport:
             "notes": self.notes,
         }
 
-    def save(self, directory: Path = Path("consciousness/incident_reports")) -> Path:
+    def save(self, directory: Path = Path("data/incident_reports")) -> Path:
         """
         Save incident report to disk.
 

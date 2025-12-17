@@ -1,0 +1,45 @@
+# LoRA Configuration for Noesis Philosophical Training
+# Based on Unsloth + QLoRA for efficient fine-tuning
+
+# Model Selection
+model:
+  base_model: "meta-llama/Llama-3.1-8B-Instruct"
+  # Alternatives:
+  # - "mistralai/Mistral-7B-Instruct-v0.3"
+  # - "meta-llama/Llama-3.2-3B-Instruct"  # Smaller, faster, cheaper
+  max_seq_length: 4096
+  dtype: "float16"
+  load_in_4bit: true  # QLoRA - essential for L40S
+
+# LoRA Parameters
+lora:
+  r: 64                    # Rank - higher = more capacity, more memory
+  lora_alpha: 128          # Scaling factor (usually 2x r)
+  lora_dropout: 0.05       # Regularization
+  bias: "none"             # No bias training
+
+  # Target modules for Llama architecture
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+  # Task type
+  task_type: "CAUSAL_LM"
+
+# Quantization (QLoRA)
+quantization:
+  load_in_4bit: true
+  bnb_4bit_compute_dtype: "float16"
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_use_double_quant: true
+
+# Memory optimization
+optimization:
+  gradient_checkpointing: true
+  use_flash_attention: true  # If supported
+  optim: "adamw_8bit"        # 8-bit Adam optimizer

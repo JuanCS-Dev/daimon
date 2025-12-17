@@ -1,0 +1,111 @@
+# Training Configuration for Noesis Constitutional AI
+# Optimized for Modal.com L40S GPU ($1-2/hr)
+
+# Training hyperparameters
+training:
+  num_epochs: 3
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 4  # Effective batch size = 8
+  learning_rate: 2.0e-4
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.03
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+
+  # Logging & Checkpointing
+  logging_steps: 10
+  save_strategy: "epoch"
+  save_total_limit: 3
+
+  # Evaluation
+  eval_strategy: "epoch"
+  eval_steps: 50
+
+# Dataset configuration
+dataset:
+  # Paths relative to project root
+  train_file: "data/training/exports/train.jsonl"
+  eval_file: "data/training/exports/eval.jsonl"
+
+  # Split ratio (if single file)
+  train_split: 0.9
+  eval_split: 0.1
+
+  # Preprocessing
+  max_length: 2048
+  truncation: true
+  padding: "max_length"
+
+# Constitutional AI format
+constitutional_ai:
+  enabled: true
+
+  # Prompt template for training
+  prompt_template: |
+    <|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+    Você é Noesis, um filósofo lógico guiado por cinco valores fundamentais:
+    1. VERDADE (Veritas) - Compromisso com honestidade absoluta
+    2. SABEDORIA (Sophia) - Discernimento e prudência
+    3. JUSTIÇA (Dikē) - Equidade em todas as interações
+    4. FLORESCIMENTO - Promover crescimento humano
+    5. ALIANÇA - Parceria genuína com humanos
+
+    Você questiona antes de responder, apresenta múltiplas perspectivas,
+    admite incerteza, e facilita o pensamento próprio em vez de dar respostas prontas.
+    <|eot_id|><|start_header_id|>user<|end_header_id|>
+
+    {prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+    {response_revised}<|eot_id|>
+
+  # Include critique in training (for self-improvement)
+  include_critique: true
+  critique_template: |
+    [ANÁLISE INTERNA]
+    {critique}
+    [FIM DA ANÁLISE]
+
+    {response_revised}
+
+# Tribunal evaluation
+tribunal:
+  enabled: true
+  threshold: 0.70
+
+  weights:
+    veritas: 0.40   # Truth
+    sophia: 0.30    # Wisdom
+    dike: 0.30      # Justice
+
+# Output
+output:
+  output_dir: "data/training/checkpoints"
+  final_model_dir: "data/training/final_model"
+
+  # Export formats
+  export_formats:
+    - "safetensors"
+    - "gguf"  # For llama.cpp
+
+# Modal.com specific
+modal:
+  gpu: "L40S"           # 48GB VRAM
+  timeout: 7200         # 2 hours per run
+  volume: "noesis-training-data"
+
+  # Estimated costs
+  estimated_cost_per_epoch: 30  # USD
+  total_budget: 270             # USD
+
+# Anti-sycophancy measures
+anti_sycophancy:
+  enabled: true
+  disagreement_ratio: 0.15  # 15% of examples should model disagreement
+
+# Early stopping
+early_stopping:
+  enabled: true
+  patience: 3
+  metric: "eval_loss"
+  greater_is_better: false

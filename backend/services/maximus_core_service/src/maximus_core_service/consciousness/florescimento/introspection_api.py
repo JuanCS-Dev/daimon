@@ -49,13 +49,23 @@ _mirror_test: Optional[MirrorTestValidator] = None
 _bridge: Optional[ConsciousnessBridge] = None
 
 def initialize_florescimento() -> None:
-    """Inicializa os singletons do módulo."""
+    """Inicializa os singletons do módulo (fallback se não injetado)."""
     global _unified_self, _mirror_test, _bridge
     
     if _unified_self is None:
         _unified_self = UnifiedSelfConcept()
         _mirror_test = MirrorTestValidator(_unified_self)
         _bridge = ConsciousnessBridge(_unified_self)
+
+def set_global_bridge(bridge_instance: ConsciousnessBridge) -> None:
+    """Injeta a ponte de consciência principal (Singularidade)."""
+    global _bridge
+    _bridge = bridge_instance
+
+def set_global_self(self_instance: UnifiedSelfConcept) -> None:
+    """Injeta o self unificado principal."""
+    global _unified_self
+    _unified_self = self_instance
 
 def get_unified_self() -> UnifiedSelfConcept:
     if _unified_self is None:

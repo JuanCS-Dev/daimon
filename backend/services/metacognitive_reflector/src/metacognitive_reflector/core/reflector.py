@@ -44,9 +44,10 @@ from .detectors import (
     RAGVerifier,
     SemanticEntropyDetector,
 )
-from .memory import MemoryClient
+from .memory import MemoryClient, MemoryType
 from .punishment import (
     OffenseType,
+
     PenalRegistry,
     PunishmentExecutor,
     PunishmentOutcome,
@@ -466,10 +467,41 @@ class Reflector:  # pylint: disable=too-many-instance-attributes
             context=context,
         )
 
+    async def get_reflection_history(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """
+        Get history of reflections and insights.
+        
+        Args:
+            limit: Maximum entries to return
+            
+        Returns:
+            List of reflection entries
+        """
+        # Search for reflections in memory
+        result = await self._memory.search(
+            query="reflection", 
+            memory_types=[MemoryType.REFLECTION],
+            limit=limit
+        )
+        
+        return [
+            {
+                "memory_id": m.memory_id,
+                "content": m.content,
+                "timestamp": m.timestamp.isoformat(),
+                "agent_id": m.context.get("agent_id"),
+                "reflection_type": m.context.get("reflection_type"),
+                "verdict": m.context.get("verdict_data")
+            }
+            for m in result.memories
+        ]
+
     async def store_reflection(
         self,
         agent_id: str,
-        critique: Critique,
+        reflection_type: str,
+        content: str,
+        verdict_data: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
         Store reflection in memory.

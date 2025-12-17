@@ -124,7 +124,7 @@ cmd_wake() {
         log_info "Starting Neural Core on :$PORT_BACKEND..."
         
         export PYTHONPATH="$SERVICES_DIR/maximus_core_service/src:$PYTHONPATH"
-        export PYTHONPATH="$SERVICES_DIR/metacognitive_reflector/src:$PYTHONPATH"
+        export PYTHONPATH="$SERVICES_DIR/metacognitive_reflector/src:$SERVICES_DIR:$PYTHONPATH"
         
         "$VENV_PYTHON" -m uvicorn maximus_core_service.main:app \
             --host 0.0.0.0 --port $PORT_BACKEND \
@@ -139,27 +139,9 @@ cmd_wake() {
         log_ok "Neural Core already active on :$PORT_BACKEND"
     fi
     
-    # ─── API Gateway ───
-    if ! is_port_active $PORT_GATEWAY; then
-        log_info "Starting API Gateway on :$PORT_GATEWAY..."
-        
-        # Install if needed
-        if [ -f "$SERVICES_DIR/api_gateway/pyproject.toml" ]; then
-            "$VENV_PIP" install -e "$SERVICES_DIR/api_gateway" -q 2>/dev/null || true
-        fi
-        
-        "$VENV_PYTHON" -m uvicorn api_gateway.api.routes:app \
-            --host 0.0.0.0 --port $PORT_GATEWAY \
-            > "$LOG_DIR/gateway.log" 2>&1 &
-        echo $! >> "$PID_FILE"
-        
-        wait_for_health "API Gateway" $PORT_GATEWAY "/health" || {
-            log_error "Gateway failed. Check: tail -50 $LOG_DIR/gateway.log"
-            return 1
-        }
-    else
-        log_ok "API Gateway already active on :$PORT_GATEWAY"
-    fi
+    # ─── API Gateway (DISABLED for stability) ───
+    # log_info "API Gateway is disabled in this blindado version."
+    log_ok "API Gateway skipped (Blindado Mode)"
     
     log_ok "Noesis is awake"
     cmd_status

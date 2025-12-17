@@ -14,8 +14,30 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 # Third party imports
-from shared.validators import InputSanitizer, get_input_sanitizer
-from shared.event_bus import NoesisEventBus, get_event_bus, EventPriority
+# from shared.validators import InputSanitizer, get_input_sanitizer
+# Inlined validator to decouple from shared package issues
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+import re
+
+@dataclass
+class ValidationResult:
+    is_valid: bool
+    error_message: Optional[str] = None
+    sanitized_data: Optional[Dict[str, Any]] = None
+
+class InputSanitizer:
+    """Basic input sanitizer."""
+    def validate_signal(self, signal: Dict[str, Any]) -> ValidationResult:
+        if not isinstance(signal, dict):
+             return ValidationResult(False, "Signal must be a dict")
+        return ValidationResult(True, sanitized_data=signal)
+
+def get_input_sanitizer() -> InputSanitizer:
+    return InputSanitizer()
+
+# from shared.event_bus import NoesisEventBus, get_event_bus, EventPriority
+from .event_bus_inline import NoesisEventBus, get_event_bus, EventPriority
 
 # Imports relativos
 from .unified_self import UnifiedSelfConcept

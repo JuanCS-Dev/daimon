@@ -121,6 +121,19 @@ async def detailed_health_check(
     )
 
 
+@router.get("/history", response_model=List[Dict[str, Any]])
+async def get_reflection_history(
+    limit: int = 50,
+    reflector: Reflector = Depends(get_reflector),
+) -> List[Dict[str, Any]]:
+    """
+    Get history of tribunal reflections.
+    
+    Returns past verdicts and critiques stored in memory.
+    """
+    return await reflector.get_reflection_history(limit=limit)
+
+
 # =============================================================================
 # Reflection Endpoints
 # =============================================================================

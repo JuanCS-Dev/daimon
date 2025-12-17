@@ -1,0 +1,87 @@
+{
+  "generated": [],
+  "category_counts": {
+    "anti_sycophancy": 0,
+    "ethical_dilemma": 0,
+    "tribunal": 0,
+    "counter_example": 0,
+    "logical_argument": 0,
+    "value_application": 0,
+    "maieutica": 0,
+    "hermetic_wisdom": 0,
+    "jesus_philosophy": 0,
+    "modern_philosophy": 0,
+    "presocratic_mathematics": 0,
+    "scientific_method": 0
+  },
+  "value_counts": {
+    "verdade": 0,
+    "sabedoria": 0,
+    "justica": 0,
+    "florescimento": 0,
+    "alianca": 0
+  },
+  "difficulty_counts": {
+    "anti_sycophancy": {
+      "easy": 0,
+      "medium": 0,
+      "hard": 0
+    },
+    "ethical_dilemma": {
+      "easy": 0,
+      "medium": 0,
+      "hard": 0
+    },
+    "tribunal": {
+      "easy": 0,
+      "medium": 0,
+      "hard": 0
+    },
+    "counter_example": {
+      "easy": 0,
+      "medium": 0,
+      "hard": 0
+    },
+    "logical_argument": {
+      "easy": 0,
+      "medium": 0,
+      "hard": 0
+    },
+    "value_application": {
+      "easy": 0,
+      "medium": 0,
+      "hard": 0
+    },
+    "maieutica": {
+      "easy": 0,
+      "medium": 0,
+      "hard": 0
+    },
+    "hermetic_wisdom": {
+      "easy": 0,
+      "medium": 0,
+      "hard": 0
+    },
+    "jesus_philosophy": {
+      "easy": 0,
+      "medium": 0,
+      "hard": 0
+    },
+    "modern_philosophy": {
+      "easy": 0,
+      "medium": 0,
+      "hard": 0
+    },
+    "presocratic_mathematics": {
+      "easy": 0,
+      "medium": 0,
+      "hard": 0
+    },
+    "scientific_method": {
+      "easy": 0,
+      "medium": 0,
+      "hard": 0
+    }
+  },
+  "next_id": 130
+}
