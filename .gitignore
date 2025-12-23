@@ -96,3 +96,5 @@ models/
 training_output/
 wandb/
 mlruns/
+# Large training files
+data/training/noesis_evol_300k/*.jsonl
